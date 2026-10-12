@@ -1,8 +1,22 @@
-# Enve Family Dashboard
+<p align="center">
+  <img src="./public/icon-192.png" alt="Enve Family" width="144">
+</p>
 
-<img src="public/icon-192.png" alt="Enve Family icon" width="72" height="72">
+<h1 align="center">Enve Family Dashboard</h1>
 
-Part of the Enve family of apps. Designed for a shared wall display and the phones in your household.
+<p align="center">
+  A shared family calendar for your wall display and iPhone, with your household data on a server you control.
+</p>
+
+<p align="center">
+  <a href="./DEPLOYMENT.md"><img src="https://img.shields.io/badge/Deploy-Self--hosted-F5921A?style=for-the-badge&logo=raspberrypi&logoColor=white" alt="Self-hosting guide"></a>
+  <a href="./ios/README.md"><img src="https://img.shields.io/badge/iPhone-build%20from%20source-F5921A?style=for-the-badge&logo=apple&logoColor=white" alt="Build the iPhone app from source"></a>
+  <a href="https://github.com/opisaac9001/Enve-Family-Dashboard/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/opisaac9001/Enve-Family-Dashboard/ci.yml?branch=main&style=for-the-badge&label=Build" alt="Build and test status"></a>
+  <a href="https://github.com/opisaac9001/Enve-Family-Dashboard/issues"><img src="https://img.shields.io/github/issues/opisaac9001/Enve-Family-Dashboard?style=for-the-badge&color=F5921A" alt="Open issues"></a>
+  <a href="https://discord.gg/Hw4nmXRehb"><img src="https://img.shields.io/badge/Discord-community-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join the Enve Discord community"></a>
+  <a href="https://buymeacoffee.com/envebookplayer"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=000000" alt="Support Enve on Buy Me a Coffee"></a>
+  <a href="./LICENSE.md"><img src="https://img.shields.io/badge/license-AGPL--3.0--only-663399?style=for-the-badge" alt="AGPL-3.0-only license"></a>
+</p>
 
 A self-hosted, touch-friendly family calendar with day, week, month, and schedule views; repeating local events; timed reminders; rotating chores, routines, and habits; shared lists; recipe-based meal suggestions; rewards; weather; local photos; import drafts; backups; and an optional parent edit PIN. Google, iCloud, and Outlook Calendar connections are available. The Raspberry Pi Zero 2 W target can run the server and display together, using either the complete WebKit interface or a lighter native interface. The Mac and Unraid remain server options.
 
