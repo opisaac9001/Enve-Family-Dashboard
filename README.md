@@ -24,11 +24,19 @@ A self-hosted, touch-friendly family calendar with day, week, month, and schedul
 
 These screenshots use an invented household and a disposable database. No connected accounts or private calendar data appear in them.
 
-| Calendar | Meals | Appearance |
+| Calendar | Night mode | Dimmed clock |
 | --- | --- | --- |
-| ![Week calendar with color-coded family events](docs/screenshots/calendar-week.jpg) | ![Weekly family meal plan](docs/screenshots/meals.jpg) | ![Mint accent selected in appearance settings](docs/screenshots/settings-accent.jpg) |
+| ![Week calendar with color-coded family events](docs/screenshots/calendar-week.jpg) | ![Week calendar in dark mode](docs/screenshots/night-calendar.jpg) | ![Dimmed wall display with a large clock](docs/screenshots/dim-clock.jpg) |
 
-The [Tasks page](docs/screenshots/tasks.jpg) gives chores, routines, and habits their own space. The dashboard adapts to an [iPhone-sized browser](docs/screenshots/phone-calendar.jpg). The [native iPhone app](docs/screenshots/iphone-app.jpg) uses the same household data and accent.
+| Tasks | Rewards | Meals |
+| --- | --- | --- |
+| ![Household tasks with open and completed chores](docs/screenshots/night-tasks.jpg) | ![Rewards, stars, and goals for each family member](docs/screenshots/rewards.jpg) | ![Weekly family meal plan](docs/screenshots/meals.jpg) |
+
+| Lists | Month view | Display settings |
+| --- | --- | --- |
+| ![Shared grocery list](docs/screenshots/lists.jpg) | ![Month calendar in dark mode](docs/screenshots/night-month.jpg) | ![Accent color and dimming controls](docs/screenshots/display-settings.jpg) |
+
+The dashboard also supports [other accent colors](docs/screenshots/settings-accent.jpg) and adapts to an [iPhone-sized browser](docs/screenshots/phone-calendar.jpg). The [native iPhone app](docs/screenshots/iphone-app.jpg) uses the same household data and accent.
 
 ## License
 
