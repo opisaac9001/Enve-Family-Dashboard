@@ -18,7 +18,7 @@
   <a href="./LICENSE.md"><img src="https://img.shields.io/badge/license-AGPL--3.0--only-663399?style=for-the-badge" alt="AGPL-3.0-only license"></a>
 </p>
 
-A self-hosted, touch-friendly family calendar with day, week, month, and schedule views; repeating local events; timed reminders; rotating chores, routines, and habits; shared lists; recipe-based meal suggestions; rewards; weather; local photos; import drafts; backups; and an optional parent edit PIN. Google, iCloud, and Outlook Calendar connections are available. The Raspberry Pi Zero 2 W target can run the server and display together, using either the complete WebKit interface or a lighter native interface. The Mac and Unraid remain server options.
+A self-hosted, touch-friendly family calendar with day, week, month, and schedule views; repeating local events; timed reminders; rotating chores, routines, and habits; shared lists; recipe-based meal suggestions; rewards; weather; local photos; import drafts; backups; and an optional parent edit PIN. Google, iCloud, and Outlook Calendar connections are available. The Raspberry Pi Zero 2 W is the one-device target for the server and display, using either the complete WebKit interface or a lighter native interface; physical performance testing is still required. The Mac and Unraid remain server options.
 
 ## Screenshots
 
@@ -88,6 +88,8 @@ For the initial localhost setup, connect the Google account in a browser on the 
 
 When moving the server to an always-on host, set `GOOGLE_REDIRECT_URI` to the exact HTTPS callback URL that browsers can reach, and add that URL to the same OAuth client's authorized redirect URIs in Google Cloud. Leave it unset for the Mac localhost test.
 
+For public Google sign-in, see the [verification preparation guide](docs/GOOGLE_OAUTH_VERIFICATION.md). The current Google OAuth client remains in testing.
+
 ## Connect Outlook Calendar
 
 1. Register a Microsoft Entra web app for personal Microsoft accounts and work or school accounts. Add delegated `User.Read` and `Calendars.Read` permissions.
@@ -107,7 +109,7 @@ The app-specific password is stored in the server's private local SQLite databas
 
 Build the native display from [pi-native/](pi-native/) and run it alongside the Node server on Raspberry Pi OS Lite. The display connects to `http://127.0.0.1:4317`; phones connect to the Pi's LAN address. The native Pi display does not use Chromium or a desktop environment. Confirm Pi performance, touch input, and backlight control with the actual display hardware. See [DEPLOYMENT.md](DEPLOYMENT.md).
 
-The dashboard is intended for one household. It supports no password, a shared sign-in, or separate adult accounts; the household owner manages accounts when sign-ins are on. The Tasks tab shows all tasks with status, person, and type filters; the calendar retains its short task list. Offline edits to connected calendar events are not implemented. The full-feature Pi kiosk runs the complete interface with WPE WebKit and an on-screen keyboard. Measure its memory use and responsiveness on the target Pi Zero 2 W and display before relying on it. The native display supports an optional Linux backlight brightness path; actual screen power control depends on the touchscreen hardware.
+The dashboard is intended for one household. It supports no password, a shared sign-in, or separate adult accounts; the household owner manages accounts when sign-ins are on. The Tasks tab shows all tasks with status, person, and type filters; tasks live in their own full tab. Offline edits to connected calendar events are not implemented. The full-feature Pi kiosk runs the complete interface with WPE WebKit and an on-screen keyboard. Measure its memory use and responsiveness on the target Pi Zero 2 W and display before relying on it. The native display supports an optional Linux backlight brightness path; actual screen power control depends on the touchscreen hardware.
 
 ## Connect other programs
 

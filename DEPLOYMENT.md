@@ -2,9 +2,9 @@
 
 Use one server and one SQLite database for the household. Phones and wall displays open that server; they do not keep separate calendars. Changes to local items notify other open devices immediately, and the iPhone app refreshes when it returns to the foreground.
 
-## Target: one Pi Zero 2 W for server and display
+## Target: one Pi for server and display
 
-Use 64-bit Raspberry Pi OS Lite. Run Node 22.13+ and the native [Pi display](pi-native/README.md) on the same board, with one SQLite database on its SD card. The native display connects to the server through `127.0.0.1`; phones connect to the Pi's LAN address. Chromium, X11, and a desktop environment are not part of this setup.
+Use 64-bit Raspberry Pi OS Lite on a Raspberry Pi 4 for a first installation; the Pi Zero 2 W remains the lower-memory target pending a full physical performance test. Run Node 22.13+ and the native [Pi display](pi-native/README.md) on the same board, with one SQLite database on its SD card. The native display connects to the server through `127.0.0.1`; phones connect to the Pi's LAN address. Chromium, X11, and a desktop environment are not part of this setup.
 
 For the full-feature trial, install `cage` and `cog` from Raspberry Pi OS packages and launch [pi-native/full-kiosk.sh](pi-native/full-kiosk.sh) from the Pi's local graphical seat while the Enve server is running. Cog runs the existing complete interface with WPE WebKit inside Cage; it does not use Chromium. This path needs a physical Pi Zero 2 W performance and touch test before replacing the native boot service. The first-run page includes Wi-Fi scan and connect when opened locally on the Pi. The native display remains the low-memory fallback.
 
@@ -34,4 +34,4 @@ For private remote access, connect the server and each phone to the same Tailsca
 
 Phones need a connection to the server to view fresh data or synchronize changes. The home-screen app keeps its last loaded view and can queue new local events, tasks, list items, and meals while it knows it is offline. Edits and connected-calendar changes require a connection. Keep the server powered on and Tailscale connected on phones for access away from home.
 
-Google and Outlook account setup needs matching OAuth redirect URLs. Configure those after the server location and HTTPS address are settled.
+Google and Outlook account setup needs matching OAuth redirect URLs. Configure those after the server location and HTTPS address are settled. See [Google verification preparation](docs/GOOGLE_OAUTH_VERIFICATION.md) before making Google sign-in public.

@@ -37,11 +37,29 @@
       <div class="calendar-connect-options">
         <section>
           <h3>Google Calendar</h3>
-          <p>Sign in with Google and choose which calendars appear.</p>
+          <p>
+            Sign in with Google and choose which calendars appear. Enve can view your Google
+            calendars and edit events you choose to change. Your connection is stored on this
+            household server.
+            <a
+              href="https://envemedia.com/family/privacy.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              >How your Google data is used ↗</a
+            >
+          </p>
           <button id="calendar-connect-google" type="button" class="primary-button">
             Continue with Google
           </button>
           <p id="calendar-google-help" class="hint"></p>
+        </section>
+        <section>
+          <h3>Outlook Calendar</h3>
+          <p>Sign in with Microsoft to show Outlook calendars. Events are read only.</p>
+          <button id="calendar-connect-outlook" type="button" class="primary-button">
+            Continue with Microsoft
+          </button>
+          <p id="calendar-outlook-help" class="hint"></p>
         </section>
         <section>
           <h3>iCloud Calendar</h3>
@@ -71,6 +89,14 @@
             ><button type="submit" class="secondary-button">Connect iCloud</button>
           </form>
           <p id="calendar-icloud-help" class="hint"></p>
+        </section>
+        <section>
+          <h3>Other calendars</h3>
+          <p>Add a public calendar link from a school, sports team, or another service.</p>
+          <button id="calendar-connect-feed" type="button" class="secondary-button">
+            Add calendar link
+          </button>
+          <p class="hint">Calendar links are read only.</p>
         </section>
       </div>
       <p id="calendar-connect-status" class="hint" role="status"></p>
@@ -164,26 +190,6 @@
             <div id="today-events" class="today-events"></div>
             <div id="today-meals" class="today-meals" hidden></div>
             <div id="next-up" class="next-up" hidden></div>
-          </section>
-          <section class="tasks-card">
-            <div class="section-heading">
-              <div>
-                <span class="eyebrow">KEEP THINGS MOVING</span>
-                <h2>Tasks</h2>
-              </div>
-              <button id="quick-task" class="round-add" aria-label="Add task">＋</button>
-            </div>
-            <div id="task-type-tabs" class="task-type-tabs" aria-label="Task type">
-              <button data-task-filter="all" class="active">All</button
-              ><button data-task-filter="chore">Chores</button
-              ><button data-task-filter="routine">Routines</button
-              ><button data-task-filter="habit">Habits</button>
-            </div>
-            <div id="routine-progress" class="routine-progress" hidden></div>
-            <div id="task-list" class="task-list"></div>
-            <button id="view-all-tasks" class="tasks-open-button" type="button">
-              Open all tasks →
-            </button>
           </section>
         </aside>
       </main>
@@ -567,323 +573,373 @@
       <div class="dialog-header">
         <div>
           <span class="eyebrow">MAKE IT YOURS</span>
-          <h2>Settings</h2>
+          <h2>Make Enve yours</h2>
         </div>
         <button type="button" class="close-button" data-close="settings-dialog" aria-label="Close">
           ×
         </button>
       </div>
-      <div class="settings-scroll">
-        <section id="wifi-settings" hidden>
-          <h3>Wi-Fi on this display</h3>
-          <p class="hint">
-            Scan and connect from the wall display. Your phone keeps its own connection.
-          </p>
-          <button id="wifi-settings-scan" class="secondary-button" type="button">Scan Wi-Fi</button>
-          <p id="wifi-settings-message" class="hint" role="status"></p>
-          <div id="wifi-settings-networks" class="wifi-networks"></div>
-          <div id="wifi-settings-password-field" class="wifi-password" hidden>
-            <label
-              >Wi-Fi password<input
-                id="wifi-settings-password"
-                type="password"
-                autocomplete="off"
-                minlength="8"
-                maxlength="63" /></label
-            ><button id="wifi-settings-connect" class="primary-button" type="button">
-              Connect
+      <div class="settings-layout">
+        <nav class="settings-nav" aria-label="Settings areas">
+          <button type="button" data-settings-group="calendars" aria-current="page">
+            <strong>Calendars</strong><span>Accounts and feeds</span>
+          </button>
+          <button type="button" data-settings-group="people">
+            <strong>People & access</strong><span>Family and sign-ins</span>
+          </button>
+          <button type="button" data-settings-group="display">
+            <strong>Display</strong><span>Look, photos, sleep</span>
+          </button>
+          <button type="button" data-settings-group="daily">
+            <strong>Daily life</strong><span>Weather and reminders</span>
+          </button>
+          <button type="button" data-settings-group="device">
+            <strong>Device & data</strong><span>Wi-Fi, backup, programs</span>
+          </button>
+        </nav>
+        <div class="settings-scroll" id="settings-scroll">
+          <div class="settings-intro">
+            <span class="eyebrow" id="settings-group-eyebrow">YOUR CALENDARS</span>
+            <h3 id="settings-group-title">Connected calendars</h3>
+            <p id="settings-group-description">
+              Add an account for each person, then choose the calendars that appear on your wall
+              display.
+            </p>
+            <p id="settings-calendar-summary" class="settings-summary"></p>
+            <p id="settings-calendar-access" class="hint"></p>
+          </div>
+          <section id="wifi-settings" data-settings-page="device" hidden>
+            <h3>Wi-Fi on this display</h3>
+            <p class="hint">
+              Scan and connect from the wall display. Your phone keeps its own connection.
+            </p>
+            <button id="wifi-settings-scan" class="secondary-button" type="button">
+              Scan Wi-Fi
             </button>
-          </div>
-        </section>
-        <section>
-          <h3>Weather</h3>
-          <div class="settings-grid">
+            <p id="wifi-settings-message" class="hint" role="status"></p>
+            <div id="wifi-settings-networks" class="wifi-networks"></div>
+            <div id="wifi-settings-password-field" class="wifi-password" hidden>
+              <label
+                >Wi-Fi password<input
+                  id="wifi-settings-password"
+                  type="password"
+                  autocomplete="off"
+                  minlength="8"
+                  maxlength="63" /></label
+              ><button id="wifi-settings-connect" class="primary-button" type="button">
+                Connect
+              </button>
+            </div>
+          </section>
+          <section data-settings-page="daily">
+            <h3>Weather</h3>
+            <div class="settings-grid">
+              <label
+                >City<input
+                  id="weather-city"
+                  maxlength="80"
+                  placeholder="City or ZIP code" /></label
+              ><label
+                >Temperature<select id="weather-units">
+                  <option value="fahrenheit">Fahrenheit</option>
+                  <option value="celsius">Celsius</option>
+                </select></label
+              >
+            </div>
+            <p class="hint">Weather updates every 30 minutes when online.</p>
+          </section>
+          <section data-settings-page="display">
+            <h3>Photos</h3>
+            <div class="settings-grid">
+              <label class="check-row"
+                ><input id="photos-enabled" type="checkbox" /> Show photos when idle</label
+              ><label
+                >Start after<select id="photos-after">
+                  <option value="1">1 minute</option>
+                  <option value="5">5 minutes</option>
+                  <option value="10">10 minutes</option>
+                  <option value="30">30 minutes</option>
+                </select></label
+              >
+            </div>
             <label
-              >City<input id="weather-city" maxlength="80" placeholder="City or ZIP code" /></label
-            ><label
-              >Temperature<select id="weather-units">
-                <option value="fahrenheit">Fahrenheit</option>
-                <option value="celsius">Celsius</option>
-              </select></label
-            >
-          </div>
-          <p class="hint">Weather updates every 30 minutes when online.</p>
-        </section>
-        <section>
-          <h3>Photos</h3>
-          <div class="settings-grid">
-            <label class="check-row"
-              ><input id="photos-enabled" type="checkbox" /> Show photos when idle</label
-            ><label
-              >Start after<select id="photos-after">
-                <option value="1">1 minute</option>
-                <option value="5">5 minutes</option>
-                <option value="10">10 minutes</option>
-                <option value="30">30 minutes</option>
-              </select></label
-            >
-          </div>
-          <label
-            >Add photo<input id="photo-upload" type="file" accept="image/jpeg,image/png,image/webp"
-          /></label>
-          <p class="hint">Photos stay in the local dashboard. Each file must be under 5 MB.</p>
-          <button id="preview-photos" class="secondary-button" type="button">Preview photos</button>
-          <div id="photo-list"></div>
-        </section>
-        <section>
-          <h3>Appearance</h3>
-          <div class="settings-grid">
-            <label
-              >Theme<select id="theme-setting">
-                <option value="auto">Follow schedule</option>
-                <option value="light">Always light</option>
-                <option value="dark">Always dark</option>
-              </select></label
-            ><label>Light mode begins<input id="light-at" type="time" /></label
-            ><label>Dark mode begins<input id="dark-at" type="time" /></label>
-          </div>
-          <fieldset class="accent-options" id="accent-options">
-            <legend>Accent color</legend>
-            <button
-              type="button"
-              data-accent="#F5921A"
-              aria-label="Orange"
-              aria-pressed="false"
-              style="--swatch: #f5921a"
-            ></button
-            ><button
-              type="button"
-              data-accent="#62C9AC"
-              aria-label="Mint"
-              aria-pressed="false"
-              style="--swatch: #62c9ac"
-            ></button
-            ><button
-              type="button"
-              data-accent="#8DBBF1"
-              aria-label="Blue"
-              aria-pressed="false"
-              style="--swatch: #8dbbf1"
-            ></button
-            ><button
-              type="button"
-              data-accent="#C0A6F1"
-              aria-label="Lilac"
-              aria-pressed="false"
-              style="--swatch: #c0a6f1"
-            ></button
-            ><button
-              type="button"
-              data-accent="#F2A6B6"
-              aria-label="Rose"
-              aria-pressed="false"
-              style="--swatch: #f2a6b6"
-            ></button>
-          </fieldset>
-        </section>
-        <section>
-          <h3>Display</h3>
-          <div class="settings-grid">
-            <label
-              >Spacing<select id="display-density">
-                <option value="comfortable">Comfortable</option>
-                <option value="compact">Compact</option>
-              </select></label
-            ><label
-              >Text size<select id="text-size">
-                <option value="small">Small</option>
-                <option value="normal">Normal</option>
-                <option value="large">Large</option>
-              </select></label
-            ><label
-              >Dashboard layout<select id="layout-mode">
-                <option value="auto">Automatic</option>
-                <option value="portrait">Portrait style</option>
-                <option value="landscape">Landscape style</option>
-              </select></label
-            ><label
-              >Dim after inactivity<select id="dim-after">
-                <option value="1">1 minute</option>
-                <option value="5">5 minutes</option>
-                <option value="10">10 minutes</option>
-                <option value="30">30 minutes</option>
-                <option value="60">1 hour</option>
-                <option value="120">2 hours</option>
-              </select></label
-            ><label
-              >Dim strength<input id="dim-amount" type="range" min="10" max="95" step="5" /></label
-            ><label class="check-row"><input id="night-dim" type="checkbox" /> Dim at night</label>
-          </div>
-          <p class="hint">This dims the dashboard. Backlight dimming depends on your screen.</p>
-          <button id="preview-dim" class="secondary-button">Preview dim screen</button>
-        </section>
-        <section>
-          <h3>Sleep schedule</h3>
-          <div class="settings-grid">
-            <label class="check-row"
-              ><input id="sleep-enabled" type="checkbox" /> Use sleep schedule</label
-            ><label>Sleep at<input id="sleep-at" type="time" /></label
-            ><label>Wake at<input id="wake-at" type="time" /></label>
-          </div>
-          <p class="hint">Sleep darkens the screen. Tap to wake it for 15 minutes.</p>
-        </section>
-        <section>
-          <h3>Reminders</h3>
-          <div class="settings-grid">
-            <label class="check-row"
-              ><input id="reminders-enabled" type="checkbox" /> Show reminders</label
-            ><label
-              >Alert before event or timed task<select id="reminder-minutes">
-                <option value="0">At the start</option>
-                <option value="5">5 minutes before</option>
-                <option value="15">15 minutes before</option>
-                <option value="30">30 minutes before</option>
-                <option value="60">1 hour before</option>
-              </select></label
-            ><label class="check-row"
-              ><input id="reminder-chime" type="checkbox" /> Play a chime</label
-            >
-          </div>
-          <p class="hint">Reminders appear while this dashboard is open in a browser.</p>
-        </section>
-        <section>
-          <h3>Parent edit PIN</h3>
-          <p class="hint">
-            Optional 4–8 digit PIN for editing calendar items, lists, meals, rewards, settings, and
-            photos. Chores can still be checked off.
-          </p>
-          <p id="pin-status" class="hint"></p>
-          <div class="inline-form">
-            <input
-              id="pin-new"
-              type="password"
-              inputmode="numeric"
-              pattern="[0-9]{4,8}"
-              minlength="4"
-              maxlength="8"
-              placeholder="New PIN"
-              aria-label="New edit PIN"
-            /><button id="pin-save" class="secondary-button">Set PIN</button
-            ><button id="pin-remove" class="secondary-button" hidden>Remove PIN</button>
-          </div>
-        </section>
-        <section>
-          <h3>Backup</h3>
-          <p class="hint">
-            Save local events, tasks, lists, meals, rewards, settings, and photos. Calendar account
-            credentials are excluded.
-          </p>
-          <div class="dialog-actions">
-            <button id="download-backup" class="secondary-button">Download backup</button
-            ><label class="secondary-button backup-upload"
-              >Restore backup<input
-                id="restore-backup"
+              >Add photo<input
+                id="photo-upload"
                 type="file"
-                accept="application/json,.json"
-                hidden
+                accept="image/jpeg,image/png,image/webp"
             /></label>
-          </div>
-        </section>
-        <section>
-          <h3>People</h3>
-          <div id="people-settings"></div>
-        </section>
-        <section id="integration-settings">
-          <h3>Connected programs</h3>
-          <p class="hint">
-            Create a private key for each program. You can remove its access here at any time.
-          </p>
-          <form id="integration-key-form" class="account-form">
-            <label
-              >Program name<input
-                name="name"
-                maxlength="60"
-                placeholder="My automation"
-                required /></label
-            ><label
-              >Access<select name="scope">
-                <option value="read">View only</option>
-                <option value="read_write">View and add or edit</option>
-              </select></label
-            ><button class="secondary-button">Create connection key</button>
-          </form>
-          <div id="integration-secret" hidden>
-            <label
-              >New key — copy it now<input
-                id="integration-token"
-                readonly
-                autocomplete="off" /></label
-            ><button id="integration-copy" class="secondary-button" type="button">Copy key</button>
-            <p class="hint">This key appears only once. Keep it private.</p>
-          </div>
-          <div id="integration-keys"></div>
-          <p id="integration-status" class="hint" role="status"></p>
-        </section>
-        <section>
-          <h3>Google Calendar</h3>
-          <p class="hint">
-            Connect each person's Google account on the device running Enve Family. Choose which
-            calendars appear below.
-          </p>
-          <div id="google-settings"></div>
-        </section>
-        <section>
-          <h3>Outlook Calendar</h3>
-          <p class="hint">
-            Connect Outlook on the device running Enve Family to show its calendars. Outlook events
-            are read only.
-          </p>
-          <div id="outlook-settings"></div>
-        </section>
-        <section>
-          <h3>Calendar URLs</h3>
-          <p class="hint">
-            Add public HTTPS iCalendar links from schools, teams, or other calendar services. These
-            calendars are read only.
-          </p>
-          <div id="feed-settings"></div>
-          <form id="feed-form" class="icloud-connect-form">
-            <label
-              >Name<input
-                name="name"
-                maxlength="80"
-                placeholder="School calendar"
-                required /></label
-            ><label
-              >iCalendar URL<input
-                name="url"
-                type="url"
-                placeholder="https://example.com/calendar.ics"
-                required /></label
-            ><label>Show for<select name="profileId" id="feed-profile"></select></label
-            ><button class="secondary-button">Add calendar URL</button>
-          </form>
-        </section>
-        <section>
-          <h3>iCloud Calendar</h3>
-          <p class="hint">
-            Connect on the device running Enve Family with an Apple app-specific password. The
-            password stays in the private local database.
-          </p>
-          <div id="icloud-settings"></div>
-          <form id="icloud-connect-form" class="icloud-connect-form">
-            <label
-              >Apple Account email<input
-                name="email"
-                type="email"
-                autocomplete="username"
-                required /></label
-            ><label
-              >App-specific password<input
-                name="appPassword"
+            <p class="hint">Photos stay in the local dashboard. Each file must be under 5 MB.</p>
+            <button id="preview-photos" class="secondary-button" type="button">
+              Preview photos
+            </button>
+            <div id="photo-list"></div>
+          </section>
+          <section data-settings-page="display">
+            <h3>Appearance</h3>
+            <div class="settings-grid">
+              <label
+                >Theme<select id="theme-setting">
+                  <option value="auto">Follow schedule</option>
+                  <option value="light">Always light</option>
+                  <option value="dark">Always dark</option>
+                </select></label
+              ><label>Light mode begins<input id="light-at" type="time" /></label
+              ><label>Dark mode begins<input id="dark-at" type="time" /></label>
+            </div>
+            <fieldset class="accent-options" id="accent-options">
+              <legend>Accent color</legend>
+              <button
+                type="button"
+                data-accent="#F5921A"
+                aria-label="Orange"
+                aria-pressed="false"
+                style="--swatch: #f5921a"
+              ></button
+              ><button
+                type="button"
+                data-accent="#62C9AC"
+                aria-label="Mint"
+                aria-pressed="false"
+                style="--swatch: #62c9ac"
+              ></button
+              ><button
+                type="button"
+                data-accent="#8DBBF1"
+                aria-label="Blue"
+                aria-pressed="false"
+                style="--swatch: #8dbbf1"
+              ></button
+              ><button
+                type="button"
+                data-accent="#C0A6F1"
+                aria-label="Lilac"
+                aria-pressed="false"
+                style="--swatch: #c0a6f1"
+              ></button
+              ><button
+                type="button"
+                data-accent="#F2A6B6"
+                aria-label="Rose"
+                aria-pressed="false"
+                style="--swatch: #f2a6b6"
+              ></button>
+            </fieldset>
+          </section>
+          <section data-settings-page="display">
+            <h3>Display</h3>
+            <div class="settings-grid">
+              <label
+                >Spacing<select id="display-density">
+                  <option value="comfortable">Comfortable</option>
+                  <option value="compact">Compact</option>
+                </select></label
+              ><label
+                >Text size<select id="text-size">
+                  <option value="small">Small</option>
+                  <option value="normal">Normal</option>
+                  <option value="large">Large</option>
+                </select></label
+              ><label
+                >Dashboard layout<select id="layout-mode">
+                  <option value="auto">Automatic</option>
+                  <option value="portrait">Portrait style</option>
+                  <option value="landscape">Landscape style</option>
+                </select></label
+              ><label
+                >Dim after inactivity<select id="dim-after">
+                  <option value="1">1 minute</option>
+                  <option value="5">5 minutes</option>
+                  <option value="10">10 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="60">1 hour</option>
+                  <option value="120">2 hours</option>
+                </select></label
+              ><label
+                >Dim strength<input
+                  id="dim-amount"
+                  type="range"
+                  min="10"
+                  max="95"
+                  step="5" /></label
+              ><label class="check-row"
+                ><input id="night-dim" type="checkbox" /> Dim at night</label
+              >
+            </div>
+            <p class="hint">This dims the dashboard. Backlight dimming depends on your screen.</p>
+            <button id="preview-dim" class="secondary-button">Preview dim screen</button>
+          </section>
+          <section data-settings-page="display">
+            <h3>Sleep schedule</h3>
+            <div class="settings-grid">
+              <label class="check-row"
+                ><input id="sleep-enabled" type="checkbox" /> Use sleep schedule</label
+              ><label>Sleep at<input id="sleep-at" type="time" /></label
+              ><label>Wake at<input id="wake-at" type="time" /></label>
+            </div>
+            <p class="hint">Sleep darkens the screen. Tap to wake it for 15 minutes.</p>
+          </section>
+          <section data-settings-page="daily">
+            <h3>Reminders</h3>
+            <div class="settings-grid">
+              <label class="check-row"
+                ><input id="reminders-enabled" type="checkbox" /> Show reminders</label
+              ><label
+                >Alert before event or timed task<select id="reminder-minutes">
+                  <option value="0">At the start</option>
+                  <option value="5">5 minutes before</option>
+                  <option value="15">15 minutes before</option>
+                  <option value="30">30 minutes before</option>
+                  <option value="60">1 hour before</option>
+                </select></label
+              ><label class="check-row"
+                ><input id="reminder-chime" type="checkbox" /> Play a chime</label
+              >
+            </div>
+            <p class="hint">Reminders appear while this dashboard is open in a browser.</p>
+          </section>
+          <section data-settings-page="people">
+            <h3>People</h3>
+            <div id="people-settings"></div>
+          </section>
+          <section data-settings-page="people">
+            <h3>Parent edit PIN</h3>
+            <p class="hint">
+              Optional 4–8 digit PIN for editing calendar items, lists, meals, rewards, settings,
+              and photos. Chores can still be checked off.
+            </p>
+            <p id="pin-status" class="hint"></p>
+            <div class="inline-form">
+              <input
+                id="pin-new"
                 type="password"
-                autocomplete="off"
-                required /></label
-            ><label>Show on behalf of<select name="profileId" id="icloud-profile"></select></label>
-            <p id="icloud-error" class="form-error" role="alert"></p>
-            <button class="secondary-button">Connect iCloud</button>
-          </form>
-        </section>
+                inputmode="numeric"
+                pattern="[0-9]{4,8}"
+                minlength="4"
+                maxlength="8"
+                placeholder="New PIN"
+                aria-label="New edit PIN"
+              /><button id="pin-save" class="secondary-button">Set PIN</button
+              ><button id="pin-remove" class="secondary-button" hidden>Remove PIN</button>
+            </div>
+          </section>
+          <section data-settings-page="device">
+            <h3>Backup</h3>
+            <p class="hint">
+              Save local events, tasks, lists, meals, rewards, settings, and photos. Calendar
+              account credentials are excluded.
+            </p>
+            <div class="dialog-actions">
+              <button id="download-backup" class="secondary-button">Download backup</button
+              ><label class="secondary-button backup-upload"
+                >Restore backup<input
+                  id="restore-backup"
+                  type="file"
+                  accept="application/json,.json"
+                  hidden
+              /></label>
+            </div>
+          </section>
+          <section id="integration-settings" data-settings-page="device">
+            <h3>Connected programs</h3>
+            <p class="hint">
+              Create a private key for each program. You can remove its access here at any time.
+            </p>
+            <form id="integration-key-form" class="account-form">
+              <label
+                >Program name<input
+                  name="name"
+                  maxlength="60"
+                  placeholder="My automation"
+                  required /></label
+              ><label
+                >Access<select name="scope">
+                  <option value="read">View only</option>
+                  <option value="read_write">View and add or edit</option>
+                </select></label
+              ><button class="secondary-button">Create connection key</button>
+            </form>
+            <div id="integration-secret" hidden>
+              <label
+                >New key — copy it now<input
+                  id="integration-token"
+                  readonly
+                  autocomplete="off" /></label
+              ><button id="integration-copy" class="secondary-button" type="button">
+                Copy key
+              </button>
+              <p class="hint">This key appears only once. Keep it private.</p>
+            </div>
+            <div id="integration-keys"></div>
+            <p id="integration-status" class="hint" role="status"></p>
+          </section>
+          <section data-settings-page="calendars">
+            <h3>Google Calendar</h3>
+            <p class="hint">
+              Connect each person's Google account on the device running Enve Family. Choose which
+              calendars appear below.
+            </p>
+            <div id="google-settings"></div>
+          </section>
+          <section data-settings-page="calendars">
+            <h3>Outlook Calendar</h3>
+            <p class="hint">
+              Connect Outlook on the device running Enve Family to show its calendars. Outlook
+              events are read only.
+            </p>
+            <div id="outlook-settings"></div>
+          </section>
+          <section data-settings-page="calendars">
+            <h3>Calendar URLs</h3>
+            <p class="hint">
+              Add public HTTPS iCalendar links from schools, teams, or other calendar services.
+              These calendars are read only.
+            </p>
+            <div id="feed-settings"></div>
+            <form id="feed-form" class="icloud-connect-form">
+              <label
+                >Name<input
+                  name="name"
+                  maxlength="80"
+                  placeholder="School calendar"
+                  required /></label
+              ><label
+                >iCalendar URL<input
+                  name="url"
+                  type="url"
+                  placeholder="https://example.com/calendar.ics"
+                  required /></label
+              ><label>Show for<select name="profileId" id="feed-profile"></select></label
+              ><button class="secondary-button">Add calendar URL</button>
+            </form>
+          </section>
+          <section data-settings-page="calendars">
+            <h3>iCloud Calendar</h3>
+            <p class="hint">
+              Connect on the device running Enve Family with an Apple app-specific password. The
+              password stays in the private local database.
+            </p>
+            <div id="icloud-settings"></div>
+            <form id="icloud-connect-form" class="icloud-connect-form">
+              <label
+                >Apple Account email<input
+                  name="email"
+                  type="email"
+                  autocomplete="username"
+                  required /></label
+              ><label
+                >App-specific password<input
+                  name="appPassword"
+                  type="password"
+                  autocomplete="off"
+                  required /></label
+              ><label
+                >Show on behalf of<select name="profileId" id="icloud-profile"></select
+              ></label>
+              <p id="icloud-error" class="form-error" role="alert"></p>
+              <button class="secondary-button">Connect iCloud</button>
+            </form>
+          </section>
+        </div>
       </div>
       <div class="dialog-actions">
         <button id="settings-done" class="primary-button">Done</button>

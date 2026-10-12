@@ -4,7 +4,7 @@ const state = {
   cursor: new Date(),
   view: 'week',
   section: 'calendar',
-  taskFilter: 'all',
+  settingsGroup: 'calendars',
   taskStatus: 'open',
   taskPerson: 'all',
   taskType: 'all',
@@ -945,32 +945,6 @@ function render() {
       : '<div class="empty-copy">Nothing on the calendar today.</div>';
     renderTodayMeals();
     renderCountdown();
-    const tasks = state.data.tasks
-      .filter(
-        (task) =>
-          visible(task) && (state.taskFilter === 'all' || task.taskType === state.taskFilter),
-      )
-      .sort(
-        (a, b) =>
-          Number(a.completed) - Number(b.completed) ||
-          (a.dueDate || '9999').localeCompare(b.dueDate || '9999'),
-      )
-      .slice(0, 12);
-    $('#task-type-tabs')
-      .querySelectorAll('button')
-      .forEach((button) =>
-        button.classList.toggle('active', button.dataset.taskFilter === state.taskFilter),
-      );
-    const routinesToday = state.data.tasks.filter(
-      (task) => task.taskType === 'routine' && task.dueDate === today && visible(task),
-    );
-    $('#routine-progress').hidden = state.taskFilter !== 'routine' || !routinesToday.length;
-    if (routinesToday.length)
-      $('#routine-progress').textContent =
-        `${routinesToday.filter((task) => task.completed && !task.skipped).length} of ${routinesToday.length} routines done today`;
-    $('#task-list').innerHTML = tasks.length
-      ? tasks.map(renderTaskRow).join('')
-      : '<p class="empty-copy">All caught up. Add a task when something comes to mind.</p>';
   }
   if (state.section === 'tasks') renderTasksPage();
   if (state.section === 'lists') renderLists();
@@ -1402,6 +1376,47 @@ function renderAccentSelection(color) {
   });
 }
 
+const settingsGroups = {
+  calendars: [
+    'YOUR CALENDARS',
+    'Connected calendars',
+    'Add an account for each person, then choose the calendars that appear on your wall display.',
+  ],
+  people: [
+    'YOUR HOUSEHOLD',
+    'People & access',
+    'Set up family members, their colors, and how adults sign in.',
+  ],
+  display: [
+    'YOUR SCREEN',
+    'Display',
+    'Choose the look of your calendar and what happens when the screen is idle.',
+  ],
+  daily: ['EVERYDAY DETAILS', 'Daily life', 'Keep weather and timely reminders close at hand.'],
+  device: [
+    'THIS DEVICE',
+    'Device & data',
+    'Manage this display’s network, backups, and connected programs.',
+  ],
+};
+
+function showSettingsGroup(group) {
+  state.settingsGroup = group;
+  const [eyebrow, title, description] = settingsGroups[group];
+  $('#settings-group-eyebrow').textContent = eyebrow;
+  $('#settings-group-title').textContent = title;
+  $('#settings-group-description').textContent = description;
+  $('#settings-calendar-summary').hidden = group !== 'calendars';
+  $('#settings-calendar-access').hidden = group !== 'calendars';
+  document.querySelectorAll('.settings-nav [data-settings-group]').forEach((button) => {
+    if (button.dataset.settingsGroup === group) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  });
+  document.querySelectorAll('.settings-scroll [data-settings-page]').forEach((section) => {
+    section.style.display = section.dataset.settingsPage === group ? '' : 'none';
+  });
+}
+
 function renderSettings() {
   const {
     settings,
@@ -1443,51 +1458,58 @@ function renderSettings() {
     <form id="add-person-form" class="inline-form"><input name="name" placeholder="Add another person" maxlength="30" required><input name="color" type="color" value="#73BFC1" aria-label="New person color"><button class="secondary-button">Add person</button></form></div>
     <div class="people-block"><h3>Sign-ins</h3><div id="user-settings"><p class="hint">Loading sign-ins…</p></div></div>`;
   $('#google-settings').innerHTML = googleConfigured
-    ? `${accounts
-        .map(
-          (account) =>
-            `<div class="account-row"><span>${escapeHtml(account.email)} · ${escapeHtml(profile(account.profileId)?.name || '')}</span><button data-disconnect="${account.id}">Disconnect</button></div>${calendars
-              .filter((calendar) => calendar.accountId === account.id)
-              .map(
-                (calendar) =>
-                  `<label class="calendar-row"><input type="checkbox" data-calendar-toggle="${calendar.id}" ${calendar.enabled ? 'checked' : ''}>${escapeHtml(calendar.name)}${calendar.writable ? '' : ' · read only'}</label>`,
-              )
-              .join('')}`,
-        )
-        .join(
-          '',
-        )}<div class="connect-row"><select id="connect-profile">${profiles.map((person) => `<option value="${person.id}">${escapeHtml(person.name)}</option>`).join('')}</select><button id="connect-google" class="secondary-button">Connect Google</button></div>`
+    ? `${
+        accounts
+          .map(
+            (account) =>
+              `<div class="account-card"><div class="account-row"><div><strong>${escapeHtml(account.email)}</strong><small>Shown for ${escapeHtml(profile(account.profileId)?.name || 'Family')}</small></div><button data-disconnect="${account.id}">Disconnect</button></div><div class="account-calendars">${
+                calendars
+                  .filter((calendar) => calendar.accountId === account.id)
+                  .map(
+                    (calendar) =>
+                      `<label class="calendar-row"><input type="checkbox" data-calendar-toggle="${calendar.id}" ${calendar.enabled ? 'checked' : ''}>${escapeHtml(calendar.name)}${calendar.writable ? '' : ' · read only'}</label>`,
+                  )
+                  .join('') || '<p class="hint">No calendars found in this account.</p>'
+              }</div></div>`,
+          )
+          .join('') || '<p class="hint">No Google accounts connected yet.</p>'
+      }<div class="connect-row"><label>Show for<select id="connect-profile">${profiles.map((person) => `<option value="${person.id}">${escapeHtml(person.name)}</option>`).join('')}</select></label><button id="connect-google" class="secondary-button">Add Google account</button></div>`
     : '<p class="hint">Calendar sign-in is not configured on this server yet. Ask the household owner to finish setup.</p>';
   if ($('#connect-google')) $('#connect-google').disabled = !localConnect;
   $('#outlook-settings').innerHTML = outlookConfigured
-    ? `${outlookAccounts
-        .map(
-          (account) =>
-            `<div class="account-row"><span>${escapeHtml(account.email)} · ${escapeHtml(profile(account.profileId)?.name || '')}</span><button data-disconnect-outlook="${account.id}">Disconnect</button></div>${outlookCalendars
+    ? `${
+        outlookAccounts
+          .map(
+            (account) =>
+              `<div class="account-card"><div class="account-row"><div><strong>${escapeHtml(account.email)}</strong><small>Shown for ${escapeHtml(profile(account.profileId)?.name || 'Family')}</small></div><button data-disconnect-outlook="${account.id}">Disconnect</button></div><div class="account-calendars">${
+                outlookCalendars
+                  .filter((calendar) => calendar.accountId === account.id)
+                  .map(
+                    (calendar) =>
+                      `<label class="calendar-row"><input type="checkbox" data-outlook-toggle="${calendar.id}" ${calendar.enabled ? 'checked' : ''}>${escapeHtml(calendar.name)}</label>`,
+                  )
+                  .join('') || '<p class="hint">No calendars found in this account.</p>'
+              }</div></div>`,
+          )
+          .join('') || '<p class="hint">No Outlook accounts connected yet.</p>'
+      }<div class="connect-row"><label>Show for<select id="outlook-profile">${profiles.map((person) => `<option value="${person.id}">${escapeHtml(person.name)}</option>`).join('')}</select></label><button id="connect-outlook" class="secondary-button">Add Outlook account</button></div>`
+    : '<p class="hint">Calendar sign-in is not configured on this server yet. Ask the household owner to finish setup.</p>';
+  if ($('#connect-outlook')) $('#connect-outlook').disabled = !localConnect;
+  $('#icloud-settings').innerHTML =
+    icloudAccounts
+      .map(
+        (account) =>
+          `<div class="account-card"><div class="account-row"><div><strong>${escapeHtml(account.email)}</strong><small>Shown for ${escapeHtml(profile(account.profileId)?.name || 'Family')}</small></div><button data-disconnect-icloud="${account.id}">Disconnect</button></div><div class="account-calendars">${
+            icloudCalendars
               .filter((calendar) => calendar.accountId === account.id)
               .map(
                 (calendar) =>
-                  `<label class="calendar-row"><input type="checkbox" data-outlook-toggle="${calendar.id}" ${calendar.enabled ? 'checked' : ''}>${escapeHtml(calendar.name)}</label>`,
+                  `<label class="calendar-row"><input type="checkbox" data-icloud-toggle="${calendar.id}" ${calendar.enabled ? 'checked' : ''}>${escapeHtml(calendar.name)}</label>`,
               )
-              .join('')}`,
-        )
-        .join(
-          '',
-        )}<div class="connect-row"><select id="outlook-profile">${profiles.map((person) => `<option value="${person.id}">${escapeHtml(person.name)}</option>`).join('')}</select><button id="connect-outlook" class="secondary-button">Connect Outlook</button></div>`
-    : '<p class="hint">Calendar sign-in is not configured on this server yet. Ask the household owner to finish setup.</p>';
-  if ($('#connect-outlook')) $('#connect-outlook').disabled = !localConnect;
-  $('#icloud-settings').innerHTML = icloudAccounts
-    .map(
-      (account) =>
-        `<div class="account-row"><span>${escapeHtml(account.email)} · ${escapeHtml(profile(account.profileId)?.name || '')}</span><button data-disconnect-icloud="${account.id}">Disconnect</button></div>${icloudCalendars
-          .filter((calendar) => calendar.accountId === account.id)
-          .map(
-            (calendar) =>
-              `<label class="calendar-row"><input type="checkbox" data-icloud-toggle="${calendar.id}" ${calendar.enabled ? 'checked' : ''}>${escapeHtml(calendar.name)}</label>`,
-          )
-          .join('')}`,
-    )
-    .join('');
+              .join('') || '<p class="hint">No calendars found in this account.</p>'
+          }</div></div>`,
+      )
+      .join('') || '<p class="hint">No iCloud accounts connected yet.</p>';
   $('#icloud-profile').innerHTML = profiles
     .map((person) => `<option value="${person.id}">${escapeHtml(person.name)}</option>`)
     .join('');
@@ -1500,6 +1522,18 @@ function renderSettings() {
           `<div class="account-row"><label class="calendar-row"><input type="checkbox" data-feed-toggle="${calendar.id}" ${calendar.enabled ? 'checked' : ''}>${escapeHtml(calendar.name)} · ${escapeHtml(profile(calendar.profileId)?.name || '')}</label><button data-delete-feed="${calendar.id}">Remove</button></div>`,
       )
       .join('') || '<p class="hint">No calendar URLs added.</p>';
+  const accountCount = accounts.length + outlookAccounts.length + icloudAccounts.length;
+  const calendarCount = [
+    ...calendars,
+    ...outlookCalendars,
+    ...icloudCalendars,
+    ...feedCalendars,
+  ].filter((calendar) => calendar.enabled).length;
+  $('#settings-calendar-summary').textContent =
+    `${accountCount} connected account${accountCount === 1 ? '' : 's'} · ${calendarCount} calendar${calendarCount === 1 ? '' : 's'} shown`;
+  $('#settings-calendar-access').textContent = localConnect
+    ? 'You can add more Google, Outlook, and iCloud accounts here at any time.'
+    : 'Add accounts on the Enve device. You can choose which connected calendars appear from here.';
   $('#entry-profile').innerHTML = profiles
     .map((person) => `<option value="${person.id}">${escapeHtml(person.name)}</option>`)
     .join('');
@@ -1515,11 +1549,22 @@ function renderSettings() {
     )
     .join('')}`;
   renderCalendarConnect();
+  showSettingsGroup(state.settingsGroup);
 }
 
 function renderCalendarConnect() {
-  const { profiles, accounts, calendars, icloudAccounts, icloudCalendars, googleConfigured } =
-    state.data;
+  const {
+    profiles,
+    accounts,
+    calendars,
+    outlookAccounts,
+    outlookCalendars,
+    outlookConfigured,
+    icloudAccounts,
+    icloudCalendars,
+    feedCalendars,
+    googleConfigured,
+  } = state.data;
   const select = $('#calendar-connect-profile');
   const selected = select.value;
   select.innerHTML = profiles
@@ -1534,21 +1579,37 @@ function renderCalendarConnect() {
     ? 'Google sign-in needs the server’s Google connection configured first.'
     : local
       ? 'Google will open in this browser and return here when approved.'
-      : 'Connect through the private localhost address on your Mac to finish Google sign-in.';
+      : 'Connect on the Enve device to finish Google sign-in.';
+  $('#calendar-connect-outlook').disabled = !outlookConfigured || !local;
+  $('#calendar-outlook-help').textContent = !outlookConfigured
+    ? 'Microsoft sign-in needs the server’s Outlook connection configured first.'
+    : local
+      ? 'Microsoft will open in this browser and return here when approved.'
+      : 'Connect through the private localhost address on the Enve device to finish Microsoft sign-in.';
   $('#calendar-connect-icloud button[type=submit]').disabled = !local;
   $('#calendar-icloud-help').textContent = local
     ? 'Use the new app-specific password from Apple, not your normal Apple Account password.'
-    : 'Connect through the private localhost address on your Mac so the password stays off the home network.';
-  $('#calendar-connected-list').innerHTML = [
-    ...accounts.map(
-      (account) =>
-        `<div class="account-row"><span>Google · ${escapeHtml(account.email)} · ${calendars.filter((calendar) => calendar.accountId === account.id).length} calendars</span><button type="button" data-manage-calendar="google">Choose calendars</button></div>`,
-    ),
-    ...icloudAccounts.map(
-      (account) =>
-        `<div class="account-row"><span>iCloud · ${escapeHtml(account.email)} · ${icloudCalendars.filter((calendar) => calendar.accountId === account.id).length} calendars</span><button type="button" data-manage-calendar="icloud">Choose calendars</button></div>`,
-    ),
-  ].join('');
+    : 'Connect on the Enve device so the password stays off the home network.';
+  $('#calendar-connected-list').innerHTML =
+    [
+      ...accounts.map(
+        (account) =>
+          `<div class="account-row"><span>Google · ${escapeHtml(account.email)} · ${calendars.filter((calendar) => calendar.accountId === account.id).length} calendars</span><button type="button" data-manage-calendar="google">Manage</button></div>`,
+      ),
+      ...outlookAccounts.map(
+        (account) =>
+          `<div class="account-row"><span>Outlook · ${escapeHtml(account.email)} · ${outlookCalendars.filter((calendar) => calendar.accountId === account.id).length} calendars</span><button type="button" data-manage-calendar="outlook">Manage</button></div>`,
+      ),
+      ...icloudAccounts.map(
+        (account) =>
+          `<div class="account-row"><span>iCloud · ${escapeHtml(account.email)} · ${icloudCalendars.filter((calendar) => calendar.accountId === account.id).length} calendars</span><button type="button" data-manage-calendar="icloud">Manage</button></div>`,
+      ),
+      ...feedCalendars.map(
+        (calendar) =>
+          `<div class="account-row"><span>Calendar link · ${escapeHtml(calendar.name)}</span><button type="button" data-manage-calendar="feed">Manage</button></div>`,
+      ),
+    ].join('') ||
+    '<p class="hint">No calendars connected yet. Choose a service above to get started.</p>';
 }
 
 function applyDisplay() {
@@ -1726,10 +1787,6 @@ document.querySelector('.feature-tabs').addEventListener('click', (event) => {
     render();
   }
 });
-$('#view-all-tasks').addEventListener('click', () => {
-  state.section = 'tasks';
-  render();
-});
 $('#add-task-page').addEventListener('click', () => openEntry('task'));
 $('#tasks-status-tabs').addEventListener('click', (event) => {
   const button = event.target.closest('[data-task-status]');
@@ -1754,7 +1811,6 @@ document.querySelector('.view-picker').addEventListener('click', (event) => {
   }
 });
 $('#add-button').addEventListener('click', () => openEntry());
-$('#quick-task').addEventListener('click', () => openEntry('task'));
 $('#import-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   $('#import-message').textContent = 'Reading and finding drafts…';
@@ -1853,19 +1909,19 @@ $('#import-drafts').addEventListener('submit', async (event) => {
     $('#import-message').textContent = error.message;
   }
 });
-$('#task-type-tabs').addEventListener('click', (event) => {
-  const button = event.target.closest('[data-task-filter]');
-  if (button) {
-    state.taskFilter = button.dataset.taskFilter;
-    render();
-  }
-});
 $('#settings-button').addEventListener('click', () => {
+  state.settingsGroup = 'calendars';
   renderSettings();
   $('#settings-dialog').showModal();
   loadSignIns();
   loadIntegrationKeys();
   loadWifiSettings();
+});
+$('.settings-nav').addEventListener('click', (event) => {
+  const button = event.target.closest('[data-settings-group]');
+  if (!button) return;
+  showSettingsGroup(button.dataset.settingsGroup);
+  $('#settings-scroll').scrollTop = 0;
 });
 $('#settings-dialog').addEventListener('close', () => {
   $('#integration-token').value = '';
@@ -1931,6 +1987,16 @@ $('#calendar-connect-done').addEventListener('click', () => $('#calendar-connect
 $('#calendar-connect-google').addEventListener('click', () => {
   window.location.href = `/api/google/start?profileId=${encodeURIComponent($('#calendar-connect-profile').value)}`;
 });
+$('#calendar-connect-outlook').addEventListener('click', () => {
+  window.location.href = `/api/outlook/start?profileId=${encodeURIComponent($('#calendar-connect-profile').value)}`;
+});
+$('#calendar-connect-feed').addEventListener('click', () => {
+  $('#calendar-connect-dialog').close();
+  state.settingsGroup = 'calendars';
+  renderSettings();
+  $('#settings-dialog').showModal();
+  $('#feed-settings').scrollIntoView({ block: 'center' });
+});
 $('#calendar-connect-icloud').addEventListener('submit', async (event) => {
   event.preventDefault();
   const button = event.target.querySelector('button[type=submit]');
@@ -1957,6 +2023,7 @@ $('#calendar-connected-list').addEventListener('click', (event) => {
   const button = event.target.closest('[data-manage-calendar]');
   if (!button) return;
   $('#calendar-connect-dialog').close();
+  state.settingsGroup = 'calendars';
   renderSettings();
   $('#settings-dialog').showModal();
   $(`#${button.dataset.manageCalendar}-settings`).scrollIntoView({ block: 'center' });
@@ -2077,8 +2144,7 @@ $('#delete-event').addEventListener('click', async () => {
   }
 });
 $('#app').addEventListener('change', async (event) => {
-  if (!event.target.matches('[data-task]') || !event.target.closest('#task-list, #all-task-list'))
-    return;
+  if (!event.target.matches('[data-task]') || !event.target.closest('#all-task-list')) return;
   const task = state.data.tasks.find((item) => item.id === event.target.dataset.task);
   const completed = event.target.checked;
   try {
@@ -2094,7 +2160,7 @@ $('#app').addEventListener('change', async (event) => {
   }
 });
 $('#app').addEventListener('click', async (event) => {
-  if (!event.target.closest('#task-list, #all-task-list')) return;
+  if (!event.target.closest('#all-task-list')) return;
   const claim = event.target.closest('[data-claim-task]');
   if (claim) {
     const profileId = claim.closest('.task-row').querySelector('[data-claim-person]').value;
@@ -3181,8 +3247,12 @@ openWallDisplay()
         renderCalendarConnect();
         $('#calendar-connect-dialog').showModal();
         if (new URLSearchParams(location.search).has('connected')) {
+          const provider =
+            new URLSearchParams(location.search).get('connected') === 'outlook'
+              ? 'Outlook'
+              : 'Google';
           $('#calendar-connect-status').textContent =
-            'Google connected. Choose which calendars to show below.';
+            `${provider} connected. Choose which calendars to show below.`;
           history.replaceState(null, '', '/');
         }
       }
