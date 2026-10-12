@@ -32,8 +32,12 @@ class DashboardServerCase(unittest.TestCase):
         self.origin = f"http://127.0.0.1:{self.port}"
         database = Path(self.temp.name) / "family.sqlite"
         self.prepare_database(database)
+        wifi_tool = Path(self.temp.name) / "nmcli"
+        wifi_tool.write_text("#!/bin/sh\nexit 0\n")
+        wifi_tool.chmod(0o700)
         env = os.environ.copy()
-        env.update(PORT=str(self.port), DATABASE_PATH=str(database), ENVE_DEMO_SEED="1")
+        env.update(PORT=str(self.port), DATABASE_PATH=str(database), ENVE_DEMO_SEED="1",
+                   ENVE_NMCLI_BIN=str(wifi_tool))
         env.update(self.environment())
         self.server = subprocess.Popen(["node", "server.js"], cwd=ROOT, env=env,
                                        stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
@@ -744,7 +748,7 @@ class FirstRunTest(DashboardServerCase):
         wifi_request = Request(self.origin + '/api/wifi/networks',
                                headers={'Cookie': cookie.split(';')[0]})
         with urlopen(wifi_request, timeout=5) as response:
-            self.assertFalse(json.load(response)['available'])
+            self.assertEqual(json.load(response)['networks'], [])
         self.assertEqual(self.call('/api/setup/status'), (200, {'needed': False,
             'browserSetupAllowed': True, 'bootstrapRequired': False}))
         self.assertEqual(self.call('/api/state')[0], 401)
@@ -891,7 +895,7 @@ class DeviceOnlyFirstRunTest(DashboardServerCase):
                           headers={'X-Enve-Device-Key': key})
         with urlopen(request, timeout=5) as response:
             self.assertEqual(response.status, 200)
-            self.assertFalse(json.load(response)['available'])
+            self.assertEqual(json.load(response)['networks'], [])
 
     def test_local_kiosk_can_open_setup_when_listening_on_lan(self):
         self.assertEqual(super().call('/api/setup/status')[1], {
