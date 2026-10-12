@@ -1,0 +1,6 @@
+EnveFamily.xcodeproj/
+EnveFamily/Info.plist
+EnveFamily/EnveFamily.entitlements
+EnveFamilyShare/Info.plist
+EnveFamilyShare/EnveFamilyShare.entitlements
+build/

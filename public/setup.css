@@ -1,0 +1,467 @@
+:root {
+  color-scheme: dark;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #14171d;
+  color: #f4f1ec;
+}
+[hidden] {
+  display: none !important;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% 9%, #493020 0, transparent 32%),
+    radial-gradient(circle at 88% 84%, #273344 0, transparent 31%), #14171d;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+html.cursor-idle,
+html.cursor-idle * {
+  cursor: none !important;
+}
+input,
+select {
+  accent-color: #f5921a;
+}
+.setup-shell {
+  width: min(860px, calc(100% - 32px));
+  margin: 28px auto 50px;
+  padding: 30px 36px 32px;
+  background: #20242c;
+  border: 1px solid #373d47;
+  border-radius: 30px;
+  box-shadow: 0 24px 80px #0005;
+}
+.setup-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.setup-header strong {
+  display: block;
+  font-size: 20px;
+  letter-spacing: -0.04em;
+}
+.setup-header span {
+  display: block;
+  color: #aeb5be;
+  font-size: 13px;
+  margin-top: 2px;
+}
+.brand-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 15px;
+  object-fit: cover;
+}
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 34px 0 28px;
+  color: #aeb5be;
+  font-size: 13px;
+}
+.progress span {
+  white-space: nowrap;
+}
+#progress-track {
+  height: 6px;
+  flex: 1;
+  background: #383e49;
+  border-radius: 99px;
+  overflow: hidden;
+}
+#progress-track i {
+  display: block;
+  height: 100%;
+  width: 25%;
+  background: #f5921a;
+  border-radius: 99px;
+  transition: width 0.2s;
+}
+.eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: #f5921a;
+  margin: 0 0 8px;
+}
+h1 {
+  font-size: clamp(31px, 4vw, 48px);
+  letter-spacing: -0.055em;
+  line-height: 1.07;
+  margin: 0 0 14px;
+}
+h2 {
+  font-size: 18px;
+  margin: 0 0 7px;
+}
+.intro {
+  color: #b9c0c9;
+  line-height: 1.5;
+  max-width: 640px;
+  margin: 0 0 27px;
+}
+.hint,
+.finish-grid p {
+  font-size: 13px;
+  color: #aeb5be;
+  line-height: 1.45;
+}
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 17px;
+}
+.fields label,
+.person-card label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #d7dce3;
+}
+.fields label:first-child {
+  grid-column: 1/-1;
+}
+.fields input:not([type='color']),
+.fields select,
+.person-card input:not([type='color']) {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid #48505c;
+  border-radius: 11px;
+  padding: 10px 13px;
+  color: #f4f1ec;
+  background: #171b22;
+  outline: 0;
+}
+.fields input:focus,
+.fields select:focus,
+.person-card input:focus {
+  border-color: #f5921a;
+  box-shadow: 0 0 0 3px #f5921a30;
+}
+.fields input[type='color'],
+.person-card input[type='color'] {
+  width: 58px;
+  height: 46px;
+  padding: 3px;
+  border: 1px solid #48505c;
+  border-radius: 11px;
+  background: #171b22;
+}
+.mode-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.mode-options label {
+  display: grid;
+  grid-template-columns: 21px 1fr;
+  gap: 2px 8px;
+  padding: 14px 17px;
+  border: 1px solid #48505c;
+  border-radius: 16px;
+  cursor: pointer;
+}
+.mode-options label:has(input:checked) {
+  border-color: #f5921a;
+  background: #f5921a12;
+}
+.mode-options input {
+  grid-row: span 2;
+  margin-top: 4px;
+}
+.mode-options strong {
+  font-size: 14px;
+}
+.mode-options small {
+  color: #aeb5be;
+  line-height: 1.4;
+}
+#people-list {
+  display: grid;
+  gap: 10px;
+  max-height: 340px;
+  overflow: auto;
+}
+.person-card {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: end;
+  gap: 11px;
+  padding: 15px;
+  border: 1px solid #414853;
+  border-radius: 16px;
+  background: #191e25;
+}
+.person-card .adult-access {
+  grid-column: 1/-1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.person-card .adult-fields {
+  grid-column: 1/-1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.person-card .adult-fields[hidden] {
+  display: none;
+}
+.person-card .remove-person {
+  min-height: 46px;
+  padding: 0 13px;
+  border: 1px solid #48505c;
+  border-radius: 11px;
+  background: #292f39;
+  color: #e7eaf0;
+}
+.add-person {
+  margin-top: 15px;
+  padding: 12px 16px;
+  border: 1px dashed #a68b65;
+  border-radius: 12px;
+  color: #fbb86c;
+  background: #2c271f;
+}
+.finish-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 25px;
+}
+.finish-grid > div {
+  padding: 17px;
+  border: 1px solid #414853;
+  border-radius: 17px;
+  background: #191e25;
+}
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+}
+.checks label {
+  font-size: 13px;
+}
+.error {
+  min-height: 20px;
+  margin: 15px 0 0;
+  color: #ff9b8e;
+  font-size: 13px;
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 13px;
+}
+.actions button {
+  min-height: 45px;
+  padding: 0 20px;
+  border-radius: 12px;
+  border: 0;
+  font-weight: 700;
+}
+.actions .primary {
+  background: #f5921a;
+  color: #1c2026;
+}
+.actions .secondary {
+  background: #333b46;
+  color: #f4f1ec;
+}
+@media (max-width: 640px) {
+  .setup-shell {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 24px 20px;
+    border: 0;
+    border-radius: 0;
+  }
+  .fields,
+  .mode-options,
+  .finish-grid {
+    grid-template-columns: 1fr;
+  }
+  .fields label:first-child {
+    grid-column: auto;
+  }
+  .person-card {
+    grid-template-columns: 1fr auto;
+  }
+  .person-card .remove-person {
+    grid-column: 1/-1;
+  }
+  .person-card .adult-fields {
+    grid-template-columns: 1fr;
+  }
+  .progress {
+    margin: 27px 0 24px;
+  }
+  .intro {
+    margin-bottom: 21px;
+  }
+}
+#bootstrap-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #d7dce3;
+}
+#bootstrap-field input {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid #48505c;
+  border-radius: 11px;
+  padding: 10px 13px;
+  color: #f4f1ec;
+  background: #171b22;
+}
+#bootstrap-field input:focus {
+  outline: 0;
+  border-color: #f5921a;
+  box-shadow: 0 0 0 3px #f5921a30;
+}
+#device-wait {
+  padding: 90px 0 40px;
+}
+.wifi-card {
+  margin-top: 28px;
+  padding: 22px;
+  border: 1px solid #46515e;
+  border-radius: 20px;
+  background: #191f27;
+}
+.wifi-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+}
+.wifi-heading h2 {
+  margin: 0 0 5px;
+  font-size: 18px;
+}
+.wifi-heading p {
+  margin: 0;
+  color: #b8c1cd;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.wifi-heading button {
+  flex: none;
+  min-height: 42px;
+  border: 1px solid #56606d;
+  border-radius: 12px;
+  padding: 0 17px;
+  color: #f4f1ec;
+  background: #303946;
+}
+.wifi-card #wifi-message {
+  margin: 18px 0 12px;
+  color: #c7d0db;
+  font-size: 14px;
+}
+.wifi-networks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.wifi-network {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 64px;
+  padding: 11px 14px;
+  text-align: left;
+  color: #f4f1ec;
+  background: #252d37;
+  border: 1px solid #4b5562;
+  border-radius: 13px;
+}
+.wifi-network strong {
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.wifi-network span {
+  color: #aeb9c7;
+  font-size: 12px;
+}
+.wifi-network.selected {
+  border-color: #f5921a;
+  box-shadow: 0 0 0 2px #f5921a3d;
+}
+.wifi-network:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.wifi-password {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  margin-top: 16px;
+}
+.wifi-password label {
+  flex: 1;
+  display: grid;
+  gap: 6px;
+  color: #d7dce3;
+  font-size: 13px;
+  font-weight: 650;
+}
+.wifi-password input {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid #48505c;
+  border-radius: 11px;
+  padding: 10px 13px;
+  color: #f4f1ec;
+  background: #171b22;
+}
+.wifi-password button {
+  min-height: 46px;
+  border: 0;
+  border-radius: 11px;
+  padding: 0 20px;
+  background: #f5921a;
+  color: #1c2026;
+  font-weight: 750;
+}
+@media (max-width: 640px) {
+  .wifi-heading {
+    flex-direction: column;
+  }
+  .wifi-networks {
+    grid-template-columns: 1fr;
+  }
+  .wifi-password {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .wifi-password label {
+    width: 100%;
+  }
+}

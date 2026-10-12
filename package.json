@@ -1,0 +1,27 @@
+{
+  "name": "enve-family-dashboard",
+  "version": "0.1.0",
+  "description": "Self-hosted family calendar and dashboard",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "start:configured": "node --env-file=.env server.js",
+    "format": "prettier --write \"*.js\" \"public/*.{html,css,js}\" \"test/*.mjs\"",
+    "format:check": "prettier --check \"*.js\" \"public/*.{html,css,js}\" \"test/*.mjs\"",
+    "test": "node test/test_icloud.mjs && node test/test_recurrence.mjs && node test/test_feeds.mjs && node test/test_cloud_meals.mjs && node test/test_wifi.mjs && python3 -m unittest discover -s test -v"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "@js-temporal/polyfill": "0.5.1",
+    "chrono-node": "2.10.2",
+    "ical.js": "2.2.1",
+    "tsdav": "2.3.5"
+  },
+  "devDependencies": {
+    "prettier": "3.6.2"
+  }
+}

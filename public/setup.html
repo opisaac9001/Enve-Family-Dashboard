@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#17191f" />
+    <title>Set up Enve Family</title>
+    <link rel="stylesheet" href="/setup.css" />
+    <link rel="stylesheet" href="/onscreen-keyboard.css" />
+    <script src="/onscreen-keyboard.js" defer></script>
+    <script src="/setup.js" defer></script>
+  </head>
+  <body>
+    <main class="setup-shell">
+      <header class="setup-header">
+        <img class="brand-mark" src="/icon-192.png" alt="" />
+        <div><strong>enve family</strong><span>Your home, your way.</span></div>
+      </header>
+      <div id="device-wait" hidden>
+        <h1>Finish setup on the wall screen.</h1>
+        <p class="intro">
+          The display is ready for your household details. This page will open automatically when
+          setup is complete.
+        </p>
+      </div>
+      <div class="progress">
+        <span id="step-count">Step 1 of 4</span>
+        <div id="progress-track"><i></i></div>
+      </div>
+      <form id="setup-form">
+        <section class="step" data-step="0">
+          <p class="eyebrow">WELCOME HOME</p>
+          <h1>Make it yours.</h1>
+          <p class="intro">
+            Name your household and choose the person who will set it up. You can add more people
+            and calendars whenever you like.
+          </p>
+          <div class="fields">
+            <label
+              >Household name<input
+                name="householdName"
+                maxlength="60"
+                placeholder="The Smith Family"
+                required
+                autofocus
+            /></label>
+            <label
+              >Your name<input
+                name="ownerName"
+                maxlength="30"
+                placeholder="Your first name"
+                required
+            /></label>
+            <label
+              >Your color<input
+                name="ownerColor"
+                type="color"
+                value="#6CA8DF"
+                aria-label="Your color"
+            /></label>
+          </div>
+          <div id="wifi-setup" class="wifi-card" hidden>
+            <div class="wifi-heading">
+              <div>
+                <h2>Connect this display</h2>
+                <p>Choose your home Wi-Fi to sync calendars and reach Enve from your phones.</p>
+              </div>
+              <button id="wifi-scan" type="button" class="secondary">Scan Wi-Fi</button>
+            </div>
+            <p id="wifi-message" role="status">Looking for nearby networks…</p>
+            <div id="wifi-networks" class="wifi-networks"></div>
+            <div id="wifi-password-field" class="wifi-password" hidden>
+              <label
+                >Wi-Fi password<input
+                  id="wifi-password"
+                  type="password"
+                  autocomplete="off"
+                  minlength="8"
+                  maxlength="63" /></label
+              ><button id="wifi-connect" type="button" class="primary">Connect</button>
+            </div>
+          </div>
+          <label id="bootstrap-field" hidden
+            >Server setup key<input
+              name="bootstrapKey"
+              type="password"
+              autocomplete="off"
+              minlength="12"
+              placeholder="Key from your server configuration"
+          /></label>
+        </section>
+        <section class="step" data-step="1" hidden>
+          <p class="eyebrow">PRIVATE BY DESIGN</p>
+          <h1>Choose how to sign in.</h1>
+          <p class="intro">
+            Choose what happens when someone opens Enve on a phone or computer. The wall display
+            opens automatically either way.
+          </p>
+          <div class="mode-options">
+            <label
+              ><input type="radio" name="signInMode" value="none" /><strong>No password</strong
+              ><small
+                >Opens immediately on your home network. Anyone who can reach this device can see
+                and change your household information.</small
+              ></label
+            >
+            <label
+              ><input type="radio" name="signInMode" value="shared" checked /><strong
+                >One household sign-in</strong
+              ><small
+                >Everyone uses the same password or short PIN. Easiest for a shared family
+                phone.</small
+              ></label
+            >
+            <label
+              ><input type="radio" name="signInMode" value="individual" /><strong
+                >Individual adult sign-ins</strong
+              ><small
+                >Each adult uses their own sign-in name and password. Everyone still sees the same
+                family calendar; children can have a color without an account.</small
+              ></label
+            >
+          </div>
+          <div class="fields">
+            <label id="owner-username-field" hidden
+              >Your sign-in name<input
+                name="ownerUsername"
+                autocomplete="username"
+                minlength="3"
+                maxlength="30"
+                pattern="[a-zA-Z0-9][a-zA-Z0-9._-]{2,29}"
+                placeholder="alex"
+            /></label>
+            <label class="owner-password-field"
+              >Password or PIN<input
+                name="ownerPassword"
+                type="password"
+                autocomplete="new-password"
+                minlength="4"
+                maxlength="128"
+                required
+            /></label>
+            <label class="owner-password-field"
+              >Confirm password or PIN<input
+                name="confirmPassword"
+                type="password"
+                autocomplete="new-password"
+                minlength="4"
+                maxlength="128"
+                required
+            /></label>
+          </div>
+          <p id="sign-in-explanation" class="hint" role="status">
+            A 4-digit PIN works. A longer password gives more protection if other people use your
+            network.
+          </p>
+        </section>
+        <section class="step" data-step="2" hidden>
+          <p class="eyebrow">YOUR PEOPLE</p>
+          <h1>Who is this for?</h1>
+          <p class="intro">
+            Give each person a name and color for events and tasks. Only adults need a sign-in, and
+            you can add those later.
+          </p>
+          <div id="people-list"></div>
+          <button id="add-person" class="add-person" type="button">＋ Add a person</button>
+        </section>
+        <section class="step" data-step="3" hidden>
+          <p class="eyebrow">FINISHING TOUCHES</p>
+          <h1>Set the rhythm.</h1>
+          <p id="sign-in-summary" class="hint"></p>
+          <div class="fields">
+            <label
+              >Appearance<select name="theme">
+                <option value="auto">Light by day, dark by night</option>
+                <option value="light">Always light</option>
+                <option value="dark">Always dark</option>
+              </select></label
+            >
+            <label>Switch to light at<input name="lightAt" type="time" value="07:00" /></label>
+            <label>Switch to dark at<input name="darkAt" type="time" value="19:00" /></label>
+          </div>
+          <div class="finish-grid">
+            <div>
+              <h2>Calendars</h2>
+              <p>
+                Choose which connections to visit after setup. Google and Outlook sign-in open on a
+                phone or computer; iCloud uses an app-specific password.
+              </p>
+              <div class="checks">
+                <label><input type="checkbox" name="provider" value="google" /> Google</label
+                ><label><input type="checkbox" name="provider" value="icloud" /> iCloud</label
+                ><label><input type="checkbox" name="provider" value="outlook" /> Outlook</label
+                ><label
+                  ><input type="checkbox" name="provider" value="feeds" /> Calendar links</label
+                >
+              </div>
+            </div>
+            <div>
+              <h2>Internet</h2>
+              <p id="network-status">Checking this device’s connection…</p>
+              <p class="hint">
+                You can connect this display to Wi-Fi on the first step. Online calendars need an
+                internet connection to sync.
+              </p>
+            </div>
+          </div>
+        </section>
+        <p id="setup-error" class="error" role="alert"></p>
+        <footer class="actions">
+          <button id="back-button" type="button" class="secondary" hidden>Back</button
+          ><button id="next-button" type="button" class="primary">Continue</button
+          ><button id="finish-button" type="submit" class="primary" hidden>Open Enve Family</button>
+        </footer>
+      </form>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,8 @@
+data
+.env
+.git
+node_modules
+__pycache__
+test
+ocr.swift
+*.md

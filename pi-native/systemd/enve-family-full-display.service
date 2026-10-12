@@ -1,0 +1,26 @@
+[Unit]
+Description=Enve Family full touch display
+After=enve-family.service systemd-user-sessions.service getty@tty1.service
+Requires=enve-family.service
+Conflicts=getty@tty1.service
+
+[Service]
+Type=simple
+User=REPLACE_USER
+Group=REPLACE_USER
+SupplementaryGroups=video render input
+PAMName=login
+TTYPath=/dev/tty1
+StandardInput=tty
+StandardOutput=journal
+StandardError=journal
+WorkingDirectory=REPLACE_ROOT
+ExecCondition=REPLACE_ROOT/pi-native/display-ready.sh
+Environment=ENVE_SERVER_URL=http://127.0.0.1:4317
+ExecStart=/usr/bin/setpriv --inh-caps=-all --ambient-caps=-all REPLACE_ROOT/pi-native/full-kiosk.sh
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=5
+
+[Install]
+WantedBy=multi-user.target

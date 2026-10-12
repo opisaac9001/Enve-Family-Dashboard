@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#F5921A" />
+    <title>Enve Family · Offline</title>
+    <style>
+      :root {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        color-scheme: dark;
+      }
+      body {
+        min-height: 100svh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        background: #0c0a09;
+        color: #f0e9dc;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      main {
+        max-width: 360px;
+        text-align: center;
+      }
+      .mark {
+        display: grid;
+        place-items: center;
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 24px;
+        border-radius: 24px;
+        background: #f5921a;
+        color: #1a120a;
+        font:
+          bold 58px Georgia,
+          serif;
+      }
+      h1 {
+        font:
+          normal 35px Georgia,
+          serif;
+        margin: 0 0 12px;
+      }
+      p {
+        color: #a99f92;
+        line-height: 1.5;
+        margin: 0 0 28px;
+      }
+      button {
+        border: 0;
+        border-radius: 12px;
+        padding: 14px 24px;
+        background: #f5921a;
+        color: #1a120a;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="mark">e</div>
+      <h1>Can’t reach your calendar</h1>
+      <p>
+        Check that your phone is connected to your home network and the Enve Family server is
+        running, then try again.
+      </p>
+      <button onclick="location.reload()">Try again</button>
+    </main>
+  </body>
+</html>

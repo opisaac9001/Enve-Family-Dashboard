@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION 3.16)
+project(enve_family_display LANGUAGES CXX)
+option(ENVE_SMOKE_TEST "Enable one synthetic tap for headless UI checks" OFF)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(PkgConfig REQUIRED)
+find_package(Threads REQUIRED)
+pkg_check_modules(SDL2 REQUIRED IMPORTED_TARGET sdl2)
+pkg_check_modules(SDL2_TTF REQUIRED IMPORTED_TARGET SDL2_ttf)
+pkg_check_modules(CURL REQUIRED IMPORTED_TARGET libcurl)
+pkg_check_modules(JSON_C REQUIRED IMPORTED_TARGET json-c)
+
+add_executable(enve-family-display main.cpp)
+target_link_libraries(enve-family-display PRIVATE PkgConfig::SDL2 PkgConfig::SDL2_TTF PkgConfig::CURL PkgConfig::JSON_C Threads::Threads)
+target_compile_options(enve-family-display PRIVATE -Wall -Wextra -Wpedantic)
+add_executable(enve-family-setup setup.cpp)
+target_link_libraries(enve-family-setup PRIVATE PkgConfig::SDL2 PkgConfig::SDL2_TTF PkgConfig::CURL PkgConfig::JSON_C)
+target_compile_options(enve-family-setup PRIVATE -Wall -Wextra -Wpedantic)
+if(ENVE_SMOKE_TEST)
+  target_compile_definitions(enve-family-display PRIVATE ENVE_SMOKE_TEST=1)
+endif()

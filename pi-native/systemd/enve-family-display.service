@@ -1,0 +1,23 @@
+[Unit]
+Description=Enve Family touch display
+After=enve-family.service
+Requires=enve-family.service
+
+[Service]
+Type=simple
+User=REPLACE_USER
+Group=REPLACE_USER
+SupplementaryGroups=video render input
+WorkingDirectory=REPLACE_ROOT
+ExecCondition=REPLACE_ROOT/pi-native/display-ready.sh
+Environment=SDL_VIDEODRIVER=kmsdrm
+Environment=ENVE_SERVER_URL=http://127.0.0.1:4317
+Environment=ENVE_DEVICE_KEY_PATH=REPLACE_ROOT/data/.device-key
+ExecStart=/bin/sh -c 'REPLACE_ROOT/pi-native/build/enve-family-setup && exec REPLACE_ROOT/pi-native/build/enve-family-display'
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

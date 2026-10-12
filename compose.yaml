@@ -1,0 +1,18 @@
+services:
+  enve-family:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "4317:4317"
+    environment:
+      ACCESS_KEY: ${ENVE_FAMILY_ACCESS_KEY:?Set a household access key of at least 12 characters}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-}
+      OUTLOOK_CLIENT_ID: ${OUTLOOK_CLIENT_ID:-}
+      OUTLOOK_CLIENT_SECRET: ${OUTLOOK_CLIENT_SECRET:-}
+    volumes:
+      - family-data:/data
+
+volumes:
+  family-data:

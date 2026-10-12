@@ -1,0 +1,55 @@
+.enve-keyboard {
+  position: fixed;
+  z-index: 1000;
+  inset: auto 0 0;
+  display: grid;
+  gap: 4px;
+  padding: 7px max(8px, env(safe-area-inset-right)) max(7px, env(safe-area-inset-bottom));
+  background: #25282f;
+  border-top: 1px solid #505763;
+  box-shadow: 0 -12px 35px #0008;
+  touch-action: manipulation;
+}
+.enve-keyboard[hidden] {
+  display: none !important;
+}
+.enve-keyboard-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+.enve-keyboard button {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  padding: 0 3px;
+  border: 1px solid #5c6571;
+  border-radius: 7px;
+  background: #3b4450;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 2px 0 #171b21;
+}
+.enve-keyboard button.special {
+  flex: 1.35;
+  background: #525d6b;
+}
+.enve-keyboard button.space {
+  flex: 5;
+}
+.enve-keyboard button.done {
+  flex: 1.7;
+  background: #f5921a;
+  border-color: #f5921a;
+  color: #1e1710;
+}
+.enve-keyboard-open {
+  padding-bottom: 215px !important;
+}
+.enve-keyboard-open dialog[open] {
+  max-height: calc(100vh - 225px);
+  margin-top: 8px;
+  margin-bottom: auto;
+  overflow: auto;
+}

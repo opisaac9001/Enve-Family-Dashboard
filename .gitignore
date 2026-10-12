@@ -1,0 +1,26 @@
+data/
+.env
+.env.*
+!.env.example
+.DS_Store
+__pycache__/
+node_modules/
+pi-native/build/
+ios/build/
+coverage/
+*.log
+*.pem
+*.key
+*.p12
+*.mobileprovision
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.db-shm
+*.db-wal
+
+# Local development notes
+CLAUDE.md
+FEATURE_PARITY.md
+SOFTWARE_GAP_PLAN.md

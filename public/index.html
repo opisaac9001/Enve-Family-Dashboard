@@ -1,0 +1,1064 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0C0A09" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>Enve Family</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icon-180.png" />
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/onscreen-keyboard.css" />
+    <script src="/onscreen-keyboard.js" defer></script>
+    <script src="/app.js" defer></script>
+  </head>
+  <body data-theme="dark">
+    <dialog id="calendar-connect-dialog" class="dialog calendar-connect-dialog">
+      <div class="dialog-header">
+        <div>
+          <span class="eyebrow">YOUR CALENDARS</span>
+          <h2>Connect a calendar</h2>
+        </div>
+        <button
+          type="button"
+          class="close-button"
+          data-close="calendar-connect-dialog"
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+      <p class="muted">
+        Choose a person, then connect their account. You can add more accounts later.
+      </p>
+      <label>Show events for<select id="calendar-connect-profile"></select></label>
+      <div class="calendar-connect-options">
+        <section>
+          <h3>Google Calendar</h3>
+          <p>Sign in with Google and choose which calendars appear.</p>
+          <button id="calendar-connect-google" type="button" class="primary-button">
+            Continue with Google
+          </button>
+          <p id="calendar-google-help" class="hint"></p>
+        </section>
+        <section>
+          <h3>iCloud Calendar</h3>
+          <p>
+            Create an app-specific password in your Apple Account, then enter it here. Your regular
+            Apple Account password is never needed.
+          </p>
+          <a
+            href="https://account.apple.com/account/manage"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Create an Apple app-specific password ↗</a
+          >
+          <form id="calendar-connect-icloud">
+            <label
+              >Apple Account email<input
+                name="email"
+                type="email"
+                autocomplete="username"
+                required /></label
+            ><label
+              >App-specific password<input
+                name="appPassword"
+                type="password"
+                autocomplete="off"
+                required /></label
+            ><button type="submit" class="secondary-button">Connect iCloud</button>
+          </form>
+          <p id="calendar-icloud-help" class="hint"></p>
+        </section>
+      </div>
+      <p id="calendar-connect-status" class="hint" role="status"></p>
+      <div id="calendar-connected-list"></div>
+      <div class="dialog-actions">
+        <button id="calendar-connect-done" type="button" class="primary-button">Done</button>
+      </div>
+    </dialog>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <div id="app" class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <img class="brand-mark" src="/icon-192.png" alt="" />
+          <div>
+            <strong>enve<span class="brand-muted"> family</span></strong
+            ><small>Make room for life.</small>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <button
+            id="connection-status"
+            class="connection-status"
+            type="button"
+            aria-live="polite"
+            hidden
+          ></button
+          ><span id="clock" class="clock"></span
+          ><button id="add-calendar-button" class="secondary-button" type="button">
+            Connect calendar</button
+          ><button
+            id="settings-button"
+            class="icon-button"
+            aria-label="Open settings"
+            title="Settings"
+          >
+            ⚙
+          </button>
+        </div>
+      </header>
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">FAMILY CALENDAR</div>
+          <h1 id="week-title">This week</h1>
+          <p id="date-subtitle" class="muted"></p>
+        </div>
+        <div class="page-actions">
+          <button id="today-button" class="secondary-button">Today</button>
+          <div class="segmented">
+            <button id="previous-week" aria-label="Previous week">‹</button
+            ><button id="next-week" aria-label="Next week">›</button>
+          </div>
+          <button id="add-button" class="primary-button"><span>＋</span> Add new</button>
+        </div>
+      </div>
+      <nav class="feature-tabs" aria-label="Dashboard sections">
+        <button class="active" data-section="calendar">Calendar</button
+        ><button data-section="tasks">Tasks</button><button data-section="lists">Lists</button
+        ><button data-section="meals">Meals</button><button data-section="rewards">Rewards</button
+        ><button data-section="import">Import</button>
+      </nav>
+      <div id="calendar-tools" class="calendar-tools">
+        <nav id="profile-filters" class="filters" aria-label="Filter people"></nav>
+        <div id="calendar-search" class="calendar-search">
+          <label for="search-events">Find an event</label
+          ><input id="search-events" type="search" placeholder="Search events" autocomplete="off" />
+          <div id="search-results" class="search-results" aria-live="polite" hidden></div>
+        </div>
+      </div>
+      <div id="banner" class="banner" hidden></div>
+      <main id="calendar-section" class="dashboard-grid">
+        <div class="view-picker" aria-label="Calendar view">
+          <button data-view="day">Day</button><button data-view="week" class="active">Week</button
+          ><button data-view="month">Month</button><button data-view="schedule">Schedule</button>
+        </div>
+        <section class="calendar-panel" aria-label="Week calendar">
+          <div id="week-grid" class="week-grid"></div>
+        </section>
+        <aside class="sidebar">
+          <section id="weather-card" class="weather-card" hidden></section>
+          <section class="today-card">
+            <div class="card-heading">
+              <span class="eyebrow">AT A GLANCE</span><span class="sun-icon">✦</span>
+            </div>
+            <h2>Today</h2>
+            <p id="today-date" class="muted"></p>
+            <div class="today-stats">
+              <div><strong id="event-count">0</strong><span>events</span></div>
+              <div><strong id="task-count">0</strong><span>tasks</span></div>
+            </div>
+            <div id="today-events" class="today-events"></div>
+            <div id="today-meals" class="today-meals" hidden></div>
+            <div id="next-up" class="next-up" hidden></div>
+          </section>
+          <section class="tasks-card">
+            <div class="section-heading">
+              <div>
+                <span class="eyebrow">KEEP THINGS MOVING</span>
+                <h2>Tasks</h2>
+              </div>
+              <button id="quick-task" class="round-add" aria-label="Add task">＋</button>
+            </div>
+            <div id="task-type-tabs" class="task-type-tabs" aria-label="Task type">
+              <button data-task-filter="all" class="active">All</button
+              ><button data-task-filter="chore">Chores</button
+              ><button data-task-filter="routine">Routines</button
+              ><button data-task-filter="habit">Habits</button>
+            </div>
+            <div id="routine-progress" class="routine-progress" hidden></div>
+            <div id="task-list" class="task-list"></div>
+            <button id="view-all-tasks" class="tasks-open-button" type="button">
+              Open all tasks →
+            </button>
+          </section>
+        </aside>
+      </main>
+      <main id="tasks-section" class="feature-section tasks-section" hidden>
+        <div class="feature-heading">
+          <div>
+            <span class="eyebrow">KEEP THINGS MOVING</span>
+            <h2>Household tasks</h2>
+            <p class="muted">See everything that needs doing, across the whole family.</p>
+          </div>
+          <button id="add-task-page" class="primary-button" type="button">
+            <span>＋</span> Add task
+          </button>
+        </div>
+        <div class="tasks-summary">
+          <div><strong id="tasks-open-count">0</strong><span>To do</span></div>
+          <div><strong id="tasks-due-count">0</strong><span>Due today or overdue</span></div>
+          <div><strong id="tasks-done-count">0</strong><span>Done</span></div>
+        </div>
+        <div class="tasks-toolbar">
+          <div id="tasks-status-tabs" class="task-type-tabs" aria-label="Task status">
+            <button type="button" data-task-status="open" class="active">To do</button
+            ><button type="button" data-task-status="done">Done</button
+            ><button type="button" data-task-status="all">All</button>
+          </div>
+          <label
+            >Person<select id="tasks-person-filter">
+              <option value="all">Everyone</option>
+            </select></label
+          ><label
+            >Type<select id="tasks-type-filter">
+              <option value="all">All types</option>
+              <option value="chore">Chores</option>
+              <option value="routine">Routines</option>
+              <option value="habit">Habits</option>
+            </select></label
+          >
+        </div>
+        <div id="all-task-list" class="all-task-list" aria-live="polite"></div>
+      </main>
+      <main id="lists-section" class="feature-section" hidden>
+        <div class="feature-heading">
+          <div>
+            <span class="eyebrow">KEEP IT TOGETHER</span>
+            <h2>Shared lists</h2>
+          </div>
+          <form id="new-list-form" class="inline-form">
+            <input
+              name="name"
+              aria-label="New list name"
+              placeholder="New list name"
+              maxlength="60"
+              required
+            /><button class="secondary-button">Create list</button>
+          </form>
+        </div>
+        <div id="lists-grid" class="lists-grid"></div>
+      </main>
+      <main id="meals-section" class="feature-section" hidden>
+        <div class="feature-heading">
+          <div>
+            <span class="eyebrow">AROUND THE TABLE</span>
+            <h2>Meal plan</h2>
+          </div>
+          <div class="recipe-actions">
+            <button id="meal-groceries" class="secondary-button" type="button">
+              Add week’s ingredients to Groceries</button
+            ><button id="add-meal" class="primary-button" type="button">
+              <span>＋</span> Plan a meal
+            </button>
+          </div>
+        </div>
+        <p id="meal-status" class="meal-status" role="status"></p>
+        <div id="meal-grid" class="meal-grid"></div>
+        <details id="meal-labels" class="meal-labels">
+          <summary>Meal labels and colors</summary>
+          <p class="hint">
+            Rename labels, pick colors, and choose which appear on the calendar and in new plans.
+            Meals already planned keep their label.
+          </p>
+          <div id="meal-category-settings" class="meal-category-settings"></div>
+          <div class="recipe-actions">
+            <button id="save-meal-categories" class="secondary-button" type="button">
+              Save labels</button
+            ><span id="meal-category-status" class="hint" role="status"></span>
+          </div>
+        </details>
+        <section class="meal-planner">
+          <div class="section-heading">
+            <div>
+              <span class="eyebrow">MAKE THE WEEK EASIER</span>
+              <h2>Suggest meals</h2>
+            </div>
+          </div>
+          <form id="meal-suggestion-form" class="meal-suggestion-form">
+            <fieldset>
+              <legend>Suggest from</legend>
+              <label><input type="radio" name="source" value="saved" checked /> Saved recipes</label
+              ><label
+                ><input type="radio" name="source" value="builtin" /> Built-in ideas · offline
+                catalog</label
+              ><label
+                ><input id="cloud-meal-source" type="radio" name="source" value="cloud" /> Cloud
+                ideas · optional</label
+              >
+              <p id="cloud-meal-hint" class="hint"></p>
+            </fieldset>
+            <label
+              >Servings<input
+                name="servings"
+                type="number"
+                min="1"
+                max="24"
+                value="4"
+                required /></label
+            ><label
+              >Skip recipes containing<input name="avoid" placeholder="e.g. peanuts, mushrooms"
+            /></label>
+            <fieldset>
+              <legend>Meals to suggest</legend>
+              <div id="suggest-categories" class="suggest-categories"></div>
+            </fieldset>
+            <button class="primary-button">Suggest open spots</button>
+          </form>
+          <div id="meal-suggestions" class="meal-suggestions" aria-live="polite"></div>
+        </section>
+        <section class="recipes-section">
+          <div class="feature-heading">
+            <div>
+              <span class="eyebrow">KEEP YOUR FAVORITES</span>
+              <h2>Recipe box</h2>
+            </div>
+          </div>
+          <form id="recipe-form" class="recipe-form">
+            <label
+              >Recipe name<input
+                name="title"
+                maxlength="120"
+                required
+                placeholder="Family favorite" /></label
+            ><label
+              >Ingredients, one per line<textarea
+                name="ingredients"
+                maxlength="4000"
+                rows="4"
+                required
+                placeholder="Pasta&#10;Tomatoes&#10;Basil"
+              ></textarea></label
+            ><label
+              >Directions<textarea
+                name="directions"
+                maxlength="5000"
+                rows="3"
+                placeholder="How do you make it?"
+              ></textarea></label
+            ><label
+              >Servings<input
+                name="servings"
+                type="number"
+                min="1"
+                max="24"
+                value="4"
+                required /></label
+            ><label
+              >Recipe photo<input
+                name="photoFile"
+                type="file"
+                accept="image/jpeg,image/png,image/webp" /></label
+            ><input name="photoId" type="hidden" />
+            <div class="recipe-actions">
+              <button class="primary-button" id="save-recipe">Save recipe</button
+              ><button class="secondary-button" id="cancel-recipe-edit" type="button" hidden>
+                Cancel edit
+              </button>
+            </div>
+          </form>
+          <div id="recipes-grid" class="recipes-grid"></div>
+        </section>
+      </main>
+      <main id="rewards-section" class="feature-section" hidden>
+        <div class="feature-heading">
+          <div>
+            <span class="eyebrow">CELEBRATE THE LITTLE WINS</span>
+            <h2>Rewards</h2>
+            <p class="muted">
+              Completing a task earns its stars. Choose a reward when someone has enough.
+            </p>
+          </div>
+        </div>
+        <form id="reward-form" class="inline-form reward-form">
+          <input
+            name="title"
+            aria-label="Reward name"
+            placeholder="Reward name"
+            maxlength="120"
+            required
+          /><select name="profileId" id="reward-profile" aria-label="Person"></select
+          ><input
+            name="cost"
+            type="number"
+            min="1"
+            max="1000"
+            value="5"
+            aria-label="Star cost"
+            required
+          /><button class="primary-button">Add reward</button>
+        </form>
+        <form id="goal-form" class="inline-form goal-form">
+          <input
+            name="title"
+            aria-label="Goal name"
+            placeholder="What are they saving for?"
+            maxlength="120"
+            required
+          /><select name="profileId" id="goal-profile" aria-label="Person"></select
+          ><input
+            name="target"
+            type="number"
+            min="1"
+            max="1000"
+            value="10"
+            aria-label="Target stars"
+            required
+          /><button class="secondary-button">Add goal</button>
+        </form>
+        <div id="rewards-grid" class="rewards-grid"></div>
+        <section class="reward-history">
+          <h3>Recent stars</h3>
+          <div id="reward-history-list"></div>
+        </section>
+      </main>
+      <main id="import-section" class="feature-section" hidden>
+        <div class="feature-heading">
+          <div>
+            <span class="eyebrow">FROM PAPER TO PLAN</span>
+            <h2>Import drafts</h2>
+            <p class="muted">Review each suggestion before it is saved.</p>
+          </div>
+        </div>
+        <form id="import-form" class="import-form">
+          <label
+            >What are you importing?<select id="import-type">
+              <option value="event">Events</option>
+              <option value="task">A task</option>
+              <option value="list">List items</option>
+              <option value="recipe">A recipe</option>
+            </select></label
+          ><label
+            >Paste an email, message, or transcript<textarea
+              id="import-text"
+              rows="6"
+              placeholder="School concert October 12 at 6 PM"
+            ></textarea></label
+          ><label
+            >Or choose a photo, PDF, text, or calendar file<input
+              id="import-file"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf,text/plain,text/calendar,.ics"
+          /></label>
+          <div class="import-actions">
+            <button class="secondary-button" id="dictate-import" type="button">Dictate</button
+            ><button class="primary-button" type="submit">Find drafts</button>
+          </div>
+          <p class="hint">
+            Photo and PDF text is read on your home server. Dictation uses your browser’s speech
+            service when available.
+          </p>
+          <p id="import-message" class="form-error" role="status"></p>
+        </form>
+        <div id="import-drafts" class="import-drafts"></div>
+      </main>
+      <footer>Made for the moments that matter <span>✦</span> Enve Family</footer>
+    </div>
+    <div id="photo-layer" class="photo-layer" hidden>
+      <img id="photo-image" alt="Family photo" />
+      <div><strong id="photo-name"></strong><span>Touch to wake</span></div>
+    </div>
+    <div id="dim-layer" class="dim-layer" hidden>
+      <div><span class="dim-clock" id="dim-clock"></span><span>Touch anywhere to wake</span></div>
+    </div>
+    <div id="reminder-panel" class="reminder-panel" role="alert" hidden>
+      <div><strong id="reminder-title"></strong><span id="reminder-time"></span></div>
+      <button id="reminder-dismiss" aria-label="Dismiss reminder">×</button>
+    </div>
+    <div
+      id="task-celebration"
+      class="task-celebration"
+      role="status"
+      aria-live="polite"
+      hidden
+    ></div>
+    <dialog id="entry-dialog" class="dialog">
+      <form id="entry-form" method="dialog">
+        <div class="dialog-header">
+          <div>
+            <span class="eyebrow">ADD TO YOUR DAY</span>
+            <h2>New item</h2>
+          </div>
+          <button type="button" class="close-button" data-close="entry-dialog" aria-label="Close">
+            ×
+          </button>
+        </div>
+        <div class="entry-tabs">
+          <button type="button" id="event-tab" class="active">Event</button
+          ><button type="button" id="task-tab">Task</button>
+        </div>
+        <label
+          >Title<input
+            name="title"
+            maxlength="200"
+            required
+            placeholder="What’s happening?" /></label
+        ><label>For<select name="profileId" id="entry-profile"></select></label>
+        <div id="event-fields">
+          <label>Calendar<select name="calendarId" id="entry-calendar"></select></label
+          ><label class="check-row"><input type="checkbox" name="allDay" /> All day</label>
+          <div class="form-pair">
+            <label>Start<input name="start" type="datetime-local" /></label
+            ><label>End<input name="end" type="datetime-local" /></label>
+          </div>
+          <div id="event-repeat" class="form-pair">
+            <label
+              >Repeat<select name="repeatRule" id="event-repeat-rule">
+                <option value="none">Never</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select></label
+            ><label
+              >Repeat through<input name="repeatUntil" type="date" id="event-repeat-until"
+            /></label>
+          </div>
+          <label>Notes<textarea name="notes" rows="2" placeholder="Optional"></textarea></label>
+        </div>
+        <div id="task-fields" hidden>
+          <label
+            >Type<select name="taskType">
+              <option value="chore">Chore</option>
+              <option value="routine">Routine</option>
+              <option value="habit">Habit</option>
+            </select></label
+          ><label class="check-row" id="claimable-row"
+            ><input name="claimable" type="checkbox" /> Family chore anyone can claim</label
+          >
+          <div class="form-pair">
+            <label>Due date<input name="dueDate" type="date" /></label
+            ><label>Due time<input name="dueTime" type="time" /></label>
+          </div>
+          <label
+            >Repeat<select name="repeatRule">
+              <option value="none">Never</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select></label
+          ><label
+            >Stars earned<select name="starValue">
+              <option value="0">None</option>
+              <option value="1" selected>1 star</option>
+              <option value="2">2 stars</option>
+              <option value="3">3 stars</option>
+              <option value="4">4 stars</option>
+              <option value="5">5 stars</option>
+            </select></label
+          >
+          <fieldset id="task-rotation" class="rotation-picker" hidden>
+            <legend>Rotate chore</legend>
+            <p>“For” goes first. Choose who takes the following turns.</p>
+            <div id="rotation-options"></div>
+          </fieldset>
+        </div>
+        <p id="entry-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button type="button" class="secondary-button" data-close="entry-dialog">Cancel</button
+          ><button type="submit" class="primary-button">Save</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="settings-dialog" class="dialog settings-dialog">
+      <div class="dialog-header">
+        <div>
+          <span class="eyebrow">MAKE IT YOURS</span>
+          <h2>Settings</h2>
+        </div>
+        <button type="button" class="close-button" data-close="settings-dialog" aria-label="Close">
+          ×
+        </button>
+      </div>
+      <div class="settings-scroll">
+        <section id="wifi-settings" hidden>
+          <h3>Wi-Fi on this display</h3>
+          <p class="hint">
+            Scan and connect from the wall display. Your phone keeps its own connection.
+          </p>
+          <button id="wifi-settings-scan" class="secondary-button" type="button">Scan Wi-Fi</button>
+          <p id="wifi-settings-message" class="hint" role="status"></p>
+          <div id="wifi-settings-networks" class="wifi-networks"></div>
+          <div id="wifi-settings-password-field" class="wifi-password" hidden>
+            <label
+              >Wi-Fi password<input
+                id="wifi-settings-password"
+                type="password"
+                autocomplete="off"
+                minlength="8"
+                maxlength="63" /></label
+            ><button id="wifi-settings-connect" class="primary-button" type="button">
+              Connect
+            </button>
+          </div>
+        </section>
+        <section>
+          <h3>Weather</h3>
+          <div class="settings-grid">
+            <label
+              >City<input id="weather-city" maxlength="80" placeholder="City or ZIP code" /></label
+            ><label
+              >Temperature<select id="weather-units">
+                <option value="fahrenheit">Fahrenheit</option>
+                <option value="celsius">Celsius</option>
+              </select></label
+            >
+          </div>
+          <p class="hint">Weather updates every 30 minutes when online.</p>
+        </section>
+        <section>
+          <h3>Photos</h3>
+          <div class="settings-grid">
+            <label class="check-row"
+              ><input id="photos-enabled" type="checkbox" /> Show photos when idle</label
+            ><label
+              >Start after<select id="photos-after">
+                <option value="1">1 minute</option>
+                <option value="5">5 minutes</option>
+                <option value="10">10 minutes</option>
+                <option value="30">30 minutes</option>
+              </select></label
+            >
+          </div>
+          <label
+            >Add photo<input id="photo-upload" type="file" accept="image/jpeg,image/png,image/webp"
+          /></label>
+          <p class="hint">Photos stay in the local dashboard. Each file must be under 5 MB.</p>
+          <button id="preview-photos" class="secondary-button" type="button">Preview photos</button>
+          <div id="photo-list"></div>
+        </section>
+        <section>
+          <h3>Appearance</h3>
+          <div class="settings-grid">
+            <label
+              >Theme<select id="theme-setting">
+                <option value="auto">Follow schedule</option>
+                <option value="light">Always light</option>
+                <option value="dark">Always dark</option>
+              </select></label
+            ><label>Light mode begins<input id="light-at" type="time" /></label
+            ><label>Dark mode begins<input id="dark-at" type="time" /></label>
+          </div>
+          <fieldset class="accent-options" id="accent-options">
+            <legend>Accent color</legend>
+            <button
+              type="button"
+              data-accent="#F5921A"
+              aria-label="Orange"
+              aria-pressed="false"
+              style="--swatch: #f5921a"
+            ></button
+            ><button
+              type="button"
+              data-accent="#62C9AC"
+              aria-label="Mint"
+              aria-pressed="false"
+              style="--swatch: #62c9ac"
+            ></button
+            ><button
+              type="button"
+              data-accent="#8DBBF1"
+              aria-label="Blue"
+              aria-pressed="false"
+              style="--swatch: #8dbbf1"
+            ></button
+            ><button
+              type="button"
+              data-accent="#C0A6F1"
+              aria-label="Lilac"
+              aria-pressed="false"
+              style="--swatch: #c0a6f1"
+            ></button
+            ><button
+              type="button"
+              data-accent="#F2A6B6"
+              aria-label="Rose"
+              aria-pressed="false"
+              style="--swatch: #f2a6b6"
+            ></button>
+          </fieldset>
+        </section>
+        <section>
+          <h3>Display</h3>
+          <div class="settings-grid">
+            <label
+              >Spacing<select id="display-density">
+                <option value="comfortable">Comfortable</option>
+                <option value="compact">Compact</option>
+              </select></label
+            ><label
+              >Text size<select id="text-size">
+                <option value="small">Small</option>
+                <option value="normal">Normal</option>
+                <option value="large">Large</option>
+              </select></label
+            ><label
+              >Dashboard layout<select id="layout-mode">
+                <option value="auto">Automatic</option>
+                <option value="portrait">Portrait style</option>
+                <option value="landscape">Landscape style</option>
+              </select></label
+            ><label
+              >Dim after inactivity<select id="dim-after">
+                <option value="1">1 minute</option>
+                <option value="5">5 minutes</option>
+                <option value="10">10 minutes</option>
+                <option value="30">30 minutes</option>
+                <option value="60">1 hour</option>
+                <option value="120">2 hours</option>
+              </select></label
+            ><label
+              >Dim strength<input id="dim-amount" type="range" min="10" max="95" step="5" /></label
+            ><label class="check-row"><input id="night-dim" type="checkbox" /> Dim at night</label>
+          </div>
+          <p class="hint">This dims the dashboard. Backlight dimming depends on your screen.</p>
+          <button id="preview-dim" class="secondary-button">Preview dim screen</button>
+        </section>
+        <section>
+          <h3>Sleep schedule</h3>
+          <div class="settings-grid">
+            <label class="check-row"
+              ><input id="sleep-enabled" type="checkbox" /> Use sleep schedule</label
+            ><label>Sleep at<input id="sleep-at" type="time" /></label
+            ><label>Wake at<input id="wake-at" type="time" /></label>
+          </div>
+          <p class="hint">Sleep darkens the screen. Tap to wake it for 15 minutes.</p>
+        </section>
+        <section>
+          <h3>Reminders</h3>
+          <div class="settings-grid">
+            <label class="check-row"
+              ><input id="reminders-enabled" type="checkbox" /> Show reminders</label
+            ><label
+              >Alert before event or timed task<select id="reminder-minutes">
+                <option value="0">At the start</option>
+                <option value="5">5 minutes before</option>
+                <option value="15">15 minutes before</option>
+                <option value="30">30 minutes before</option>
+                <option value="60">1 hour before</option>
+              </select></label
+            ><label class="check-row"
+              ><input id="reminder-chime" type="checkbox" /> Play a chime</label
+            >
+          </div>
+          <p class="hint">Reminders appear while this dashboard is open in a browser.</p>
+        </section>
+        <section>
+          <h3>Parent edit PIN</h3>
+          <p class="hint">
+            Optional 4–8 digit PIN for editing calendar items, lists, meals, rewards, settings, and
+            photos. Chores can still be checked off.
+          </p>
+          <p id="pin-status" class="hint"></p>
+          <div class="inline-form">
+            <input
+              id="pin-new"
+              type="password"
+              inputmode="numeric"
+              pattern="[0-9]{4,8}"
+              minlength="4"
+              maxlength="8"
+              placeholder="New PIN"
+              aria-label="New edit PIN"
+            /><button id="pin-save" class="secondary-button">Set PIN</button
+            ><button id="pin-remove" class="secondary-button" hidden>Remove PIN</button>
+          </div>
+        </section>
+        <section>
+          <h3>Backup</h3>
+          <p class="hint">
+            Save local events, tasks, lists, meals, rewards, settings, and photos. Calendar account
+            credentials are excluded.
+          </p>
+          <div class="dialog-actions">
+            <button id="download-backup" class="secondary-button">Download backup</button
+            ><label class="secondary-button backup-upload"
+              >Restore backup<input
+                id="restore-backup"
+                type="file"
+                accept="application/json,.json"
+                hidden
+            /></label>
+          </div>
+        </section>
+        <section>
+          <h3>People</h3>
+          <div id="people-settings"></div>
+        </section>
+        <section id="integration-settings">
+          <h3>Connected programs</h3>
+          <p class="hint">
+            Create a private key for each program. You can remove its access here at any time.
+          </p>
+          <form id="integration-key-form" class="account-form">
+            <label
+              >Program name<input
+                name="name"
+                maxlength="60"
+                placeholder="My automation"
+                required /></label
+            ><label
+              >Access<select name="scope">
+                <option value="read">View only</option>
+                <option value="read_write">View and add or edit</option>
+              </select></label
+            ><button class="secondary-button">Create connection key</button>
+          </form>
+          <div id="integration-secret" hidden>
+            <label
+              >New key — copy it now<input
+                id="integration-token"
+                readonly
+                autocomplete="off" /></label
+            ><button id="integration-copy" class="secondary-button" type="button">Copy key</button>
+            <p class="hint">This key appears only once. Keep it private.</p>
+          </div>
+          <div id="integration-keys"></div>
+          <p id="integration-status" class="hint" role="status"></p>
+        </section>
+        <section>
+          <h3>Google Calendar</h3>
+          <p class="hint">
+            Connect each person's Google account on the device running Enve Family. Choose which
+            calendars appear below.
+          </p>
+          <div id="google-settings"></div>
+        </section>
+        <section>
+          <h3>Outlook Calendar</h3>
+          <p class="hint">
+            Connect Outlook on the device running Enve Family to show its calendars. Outlook events
+            are read only.
+          </p>
+          <div id="outlook-settings"></div>
+        </section>
+        <section>
+          <h3>Calendar URLs</h3>
+          <p class="hint">
+            Add public HTTPS iCalendar links from schools, teams, or other calendar services. These
+            calendars are read only.
+          </p>
+          <div id="feed-settings"></div>
+          <form id="feed-form" class="icloud-connect-form">
+            <label
+              >Name<input
+                name="name"
+                maxlength="80"
+                placeholder="School calendar"
+                required /></label
+            ><label
+              >iCalendar URL<input
+                name="url"
+                type="url"
+                placeholder="https://example.com/calendar.ics"
+                required /></label
+            ><label>Show for<select name="profileId" id="feed-profile"></select></label
+            ><button class="secondary-button">Add calendar URL</button>
+          </form>
+        </section>
+        <section>
+          <h3>iCloud Calendar</h3>
+          <p class="hint">
+            Connect on the device running Enve Family with an Apple app-specific password. The
+            password stays in the private local database.
+          </p>
+          <div id="icloud-settings"></div>
+          <form id="icloud-connect-form" class="icloud-connect-form">
+            <label
+              >Apple Account email<input
+                name="email"
+                type="email"
+                autocomplete="username"
+                required /></label
+            ><label
+              >App-specific password<input
+                name="appPassword"
+                type="password"
+                autocomplete="off"
+                required /></label
+            ><label>Show on behalf of<select name="profileId" id="icloud-profile"></select></label>
+            <p id="icloud-error" class="form-error" role="alert"></p>
+            <button class="secondary-button">Connect iCloud</button>
+          </form>
+        </section>
+      </div>
+      <div class="dialog-actions">
+        <button id="settings-done" class="primary-button">Done</button>
+      </div>
+    </dialog>
+    <dialog id="pin-dialog" class="dialog">
+      <form id="pin-form">
+        <div class="dialog-header">
+          <div>
+            <span class="eyebrow">PARENT CONTROLS</span>
+            <h2>Unlock edits</h2>
+          </div>
+          <button type="button" class="close-button" data-close="pin-dialog" aria-label="Close">
+            ×
+          </button>
+        </div>
+        <label
+          >PIN<input
+            id="pin-entry"
+            type="password"
+            inputmode="numeric"
+            pattern="[0-9]{4,8}"
+            required
+            autocomplete="off"
+        /></label>
+        <p id="pin-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button type="button" class="secondary-button" data-close="pin-dialog">Cancel</button
+          ><button class="primary-button">Unlock</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="login-dialog" class="dialog">
+      <form id="login-form">
+        <div class="dialog-header">
+          <div>
+            <span class="eyebrow">WELCOME HOME</span>
+            <h2>Enve Family</h2>
+          </div>
+        </div>
+        <p class="muted">
+          Use the household password or PIN. If adults have separate accounts, enter your sign-in
+          name too.
+        </p>
+        <label
+          >Sign-in name (for individual accounts)<input
+            id="login-name"
+            autocomplete="username"
+            placeholder="Optional for shared sign-in" /></label
+        ><label
+          >Password or PIN<input
+            id="access-key"
+            type="password"
+            required
+            autocomplete="current-password"
+        /></label>
+        <p id="login-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button class="primary-button" type="submit">Open dashboard</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="event-dialog" class="dialog">
+      <div class="dialog-header">
+        <div>
+          <span class="eyebrow">ON THE CALENDAR</span>
+          <h2 id="detail-title"></h2>
+        </div>
+        <button type="button" class="close-button" data-close="event-dialog" aria-label="Close">
+          ×
+        </button>
+      </div>
+      <p id="detail-time" class="muted"></p>
+      <p id="detail-person" class="muted"></p>
+      <p id="detail-notes"></p>
+      <div class="dialog-actions">
+        <button id="delete-event" class="secondary-button">Delete event</button
+        ><button id="edit-event" class="primary-button">Edit event</button
+        ><button class="secondary-button" data-close="event-dialog">Done</button>
+      </div>
+    </dialog>
+    <dialog id="confirm-dialog" class="dialog">
+      <div class="dialog-header">
+        <div>
+          <span class="eyebrow">PLEASE CONFIRM</span>
+          <h2 id="confirm-title">Delete item?</h2>
+        </div>
+      </div>
+      <p id="confirm-copy" class="muted"></p>
+      <div class="dialog-actions">
+        <button id="confirm-cancel" class="secondary-button">Cancel</button
+        ><button id="confirm-yes" class="primary-button">Delete</button>
+      </div>
+    </dialog>
+    <dialog id="meal-dialog" class="dialog">
+      <form id="meal-entry-form">
+        <div class="dialog-header">
+          <div>
+            <span class="eyebrow">AROUND THE TABLE</span>
+            <h2 id="meal-dialog-title">Plan a meal</h2>
+          </div>
+          <button type="button" class="close-button" data-close="meal-dialog" aria-label="Close">
+            ×
+          </button>
+        </div>
+        <div class="form-pair">
+          <label>Day<input name="day" type="date" required /></label
+          ><label>Meal<select name="category" id="meal-category" required></select></label>
+        </div>
+        <label>Meal name<input name="title" maxlength="120" placeholder="What’s cooking?" /></label>
+        <fieldset class="recipe-picker">
+          <legend>Saved recipes</legend>
+          <div id="meal-recipe-options" class="meal-recipe-options"></div>
+        </fieldset>
+        <label
+          >Servings<input name="servings" type="number" min="1" max="24" value="4" required
+        /></label>
+        <div id="meal-repeat" class="form-pair">
+          <label
+            >Repeat<select name="repeatRule" id="meal-repeat-rule">
+              <option value="none">Never</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select></label
+          ><label
+            >Repeat through<input name="repeatUntil" type="date" id="meal-repeat-until"
+          /></label>
+        </div>
+        <p id="meal-series-note" class="hint" hidden></p>
+        <label
+          >Notes<textarea name="notes" rows="2" maxlength="500" placeholder="Optional"></textarea>
+        </label>
+        <p id="meal-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button type="button" id="delete-meal" class="secondary-button" hidden>Delete</button
+          ><button type="button" class="secondary-button" data-close="meal-dialog">Cancel</button
+          ><button type="submit" class="primary-button">Save meal</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="outbox-dialog" class="dialog">
+      <div class="dialog-header">
+        <div>
+          <span class="eyebrow">CONNECTION</span>
+          <h2 id="outbox-title">Offline</h2>
+        </div>
+        <button type="button" class="close-button" data-close="outbox-dialog" aria-label="Close">
+          ×
+        </button>
+      </div>
+      <p id="outbox-summary" class="muted"></p>
+      <p class="hint">
+        While the server is unreachable the dashboard is read only. New tasks, list items, Enve
+        Family events, and meals are kept on this device and sent once the server answers. Edits,
+        deletes, and connected-calendar changes are not kept.
+      </p>
+      <div id="outbox-list" class="outbox-list"></div>
+      <div class="dialog-actions">
+        <button class="primary-button" data-close="outbox-dialog">Done</button>
+      </div>
+    </dialog>
+    <dialog id="series-dialog" class="dialog">
+      <div class="dialog-header">
+        <div>
+          <span id="series-eyebrow" class="eyebrow">REPEATING EVENT</span>
+          <h2 id="series-title">Choose what to change</h2>
+        </div>
+      </div>
+      <p class="muted">You can change this date or the entire repeating series.</p>
+      <div class="dialog-actions">
+        <button id="series-cancel" class="secondary-button">Cancel</button
+        ><button id="series-once" class="secondary-button">Only this event</button
+        ><button id="series-all" class="primary-button">Entire series</button>
+      </div>
+    </dialog>
+  </body>
+</html>
