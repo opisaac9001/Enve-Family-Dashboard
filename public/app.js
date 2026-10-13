@@ -656,12 +656,15 @@ function viewRange() {
   }
   if (state.view === 'day')
     return { from: new Date(state.cursor), to: addDays(state.cursor, 1), days: 1 };
-  const from =
-    state.view === 'month'
-      ? startOfWeek(new Date(state.cursor.getFullYear(), state.cursor.getMonth(), 1))
-      : startOfWeek(state.cursor);
-  const days = state.view === 'month' ? 42 : 7;
-  return { from, to: addDays(from, days), days };
+  if (state.view === 'month') {
+    const first = new Date(state.cursor.getFullYear(), state.cursor.getMonth(), 1);
+    const last = new Date(state.cursor.getFullYear(), state.cursor.getMonth() + 1, 0);
+    const days = Math.ceil((first.getDay() + last.getDate()) / 7) * 7;
+    const from = startOfWeek(first);
+    return { from, to: addDays(from, days), days };
+  }
+  const from = startOfWeek(state.cursor);
+  return { from, to: addDays(from, 7), days: 7 };
 }
 
 function moveCursor(direction) {
@@ -991,6 +994,8 @@ function render() {
   $('#rewards-section').hidden = state.section !== 'rewards';
   $('#import-section').hidden = state.section !== 'import';
   $('#calendar-tools').hidden = state.section !== 'calendar';
+  $('.view-picker').hidden = state.section !== 'calendar';
+  $('#today-overview').hidden = state.section !== 'calendar';
   $('.page-actions').hidden = ['tasks', 'lists', 'rewards', 'import'].includes(state.section);
   $('#add-button').hidden = state.section !== 'calendar';
   document
@@ -1016,6 +1021,7 @@ function render() {
       .join('');
     const today = dateKey(new Date());
     $('#week-grid').className = `week-grid ${state.view}-view`;
+    $('#week-grid').style.setProperty('--month-weeks', state.view === 'month' ? days / 7 : 6);
     $('#week-grid').innerHTML = Array.from({ length: days }, (_, index) => {
       const day = addDays(from, index);
       const key = dateKey(day);
@@ -1959,6 +1965,7 @@ document.querySelector('.view-picker').addEventListener('click', (event) => {
   const button = event.target.closest('[data-view]');
   if (button) {
     state.view = button.dataset.view;
+    $('#more-sections').open = false;
     load();
   }
 });

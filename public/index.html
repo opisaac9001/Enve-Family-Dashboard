@@ -150,63 +150,65 @@
           <button id="add-button" class="primary-button"><span>＋</span> Add new</button>
         </div>
       </div>
-      <nav class="feature-tabs" aria-label="Dashboard sections">
-        <button class="active" data-section="calendar">Calendar</button>
-        <details id="more-sections" class="menu-disclosure">
-          <summary>More</summary>
-          <div class="menu-panel">
-            <button data-section="tasks">All tasks</button>
-            <button data-section="lists">Lists</button>
-            <button data-section="meals">Meals</button>
-            <button data-section="rewards">Rewards</button>
-            <button data-section="import">Import</button>
-            <button id="add-calendar-button" type="button">Connect calendar</button>
-          </div>
-        </details>
-      </nav>
-      <div id="banner" class="banner" hidden></div>
-      <main id="calendar-section" class="dashboard-grid">
-        <div class="view-picker" aria-label="Calendar view">
+      <div class="navigation-bar">
+        <div class="view-picker" role="group" aria-label="Calendar view">
           <button data-view="day">Day</button><button data-view="week" class="active">Week</button
           ><button data-view="month">Month</button><button data-view="schedule">Schedule</button>
-          <details id="calendar-tools" class="calendar-tools menu-disclosure">
-            <summary>People & search</summary>
-            <div class="calendar-tools-panel">
-              <nav id="profile-filters" class="filters" aria-label="Filter people"></nav>
-              <div id="calendar-search" class="calendar-search">
-                <label for="search-events">Find an event</label
-                ><input
-                  id="search-events"
-                  type="search"
-                  placeholder="Search events"
-                  autocomplete="off"
-                />
-                <div id="search-results" class="search-results" aria-live="polite" hidden></div>
-              </div>
+        </div>
+        <nav class="feature-tabs" aria-label="Dashboard sections">
+          <button class="active" data-section="calendar">Calendar</button>
+          <details id="more-sections" class="menu-disclosure">
+            <summary>More</summary>
+            <div class="menu-panel">
+              <details id="calendar-tools" class="calendar-tools menu-disclosure">
+                <summary>People & search</summary>
+                <div class="calendar-tools-panel">
+                  <nav id="profile-filters" class="filters" aria-label="Filter people"></nav>
+                  <div id="calendar-search" class="calendar-search">
+                    <label for="search-events">Find an event</label
+                    ><input
+                      id="search-events"
+                      type="search"
+                      placeholder="Search events"
+                      autocomplete="off"
+                    />
+                    <div id="search-results" class="search-results" aria-live="polite" hidden></div>
+                  </div>
+                </div>
+              </details>
+              <details id="today-overview" class="sidebar">
+                <summary>Today’s overview</summary>
+                <section id="weather-card" class="weather-card" hidden></section>
+                <section class="today-card">
+                  <div class="card-heading">
+                    <span class="eyebrow">AT A GLANCE</span><span class="sun-icon">✦</span>
+                  </div>
+                  <h2>Today</h2>
+                  <p id="today-date" class="muted"></p>
+                  <div class="today-stats">
+                    <div><strong id="event-count">0</strong><span>events</span></div>
+                    <div><strong id="task-count">0</strong><span>tasks</span></div>
+                  </div>
+                  <div id="today-events" class="today-events"></div>
+                  <div id="today-meals" class="today-meals" hidden></div>
+                  <div id="next-up" class="next-up" hidden></div>
+                </section>
+              </details>
+              <button data-section="tasks">All tasks</button>
+              <button data-section="lists">Lists</button>
+              <button data-section="meals">Meals</button>
+              <button data-section="rewards">Rewards</button>
+              <button data-section="import">Import</button>
+              <button id="add-calendar-button" type="button">Connect calendar</button>
             </div>
           </details>
-        </div>
+        </nav>
+      </div>
+      <div id="banner" class="banner" hidden></div>
+      <main id="calendar-section" class="dashboard-grid">
         <section class="calendar-panel" aria-label="Week calendar">
           <div id="week-grid" class="week-grid"></div>
         </section>
-        <details class="sidebar">
-          <summary>Today’s overview</summary>
-          <section id="weather-card" class="weather-card" hidden></section>
-          <section class="today-card">
-            <div class="card-heading">
-              <span class="eyebrow">AT A GLANCE</span><span class="sun-icon">✦</span>
-            </div>
-            <h2>Today</h2>
-            <p id="today-date" class="muted"></p>
-            <div class="today-stats">
-              <div><strong id="event-count">0</strong><span>events</span></div>
-              <div><strong id="task-count">0</strong><span>tasks</span></div>
-            </div>
-            <div id="today-events" class="today-events"></div>
-            <div id="today-meals" class="today-meals" hidden></div>
-            <div id="next-up" class="next-up" hidden></div>
-          </section>
-        </details>
       </main>
       <main id="tasks-section" class="feature-section tasks-section" hidden>
         <div class="feature-heading">

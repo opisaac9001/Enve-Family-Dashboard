@@ -754,7 +754,7 @@ h2 {
   max-width: 520px;
 }
 .week-grid.month-view {
-  grid-template-rows: repeat(6, minmax(125px, auto));
+  grid-template-rows: repeat(var(--month-weeks, 6), minmax(125px, auto));
   min-height: 0;
 }
 .month-view .day-column {
@@ -2464,7 +2464,7 @@ body[data-kiosk] .dialog::backdrop {
     overflow: auto;
   }
   .week-grid.month-view {
-    grid-template-rows: repeat(6, minmax(0, 1fr));
+    grid-template-rows: repeat(var(--month-weeks, 6), minmax(0, 1fr));
   }
   .sidebar {
     min-height: 0;
@@ -2713,7 +2713,7 @@ body[data-kiosk] .dialog::backdrop {
     overflow: auto;
   }
   .week-grid.month-view {
-    grid-template-rows: repeat(6, minmax(0, 1fr));
+    grid-template-rows: repeat(var(--month-weeks, 6), minmax(0, 1fr));
   }
   .sidebar,
   body[data-layout='portrait'] .sidebar {
@@ -2856,7 +2856,7 @@ body[data-kiosk] .dialog::backdrop {
   left: 0;
   min-width: 190px;
 }
-.menu-panel button {
+.menu-panel > button {
   display: block;
   width: 100%;
   text-align: left;
@@ -2866,17 +2866,17 @@ body[data-kiosk] .dialog::backdrop {
   background: transparent;
   color: var(--text);
 }
-.menu-panel button:hover,
-.menu-panel button:focus-visible,
-.menu-panel button.active {
+.menu-panel > button:hover,
+.menu-panel > button:focus-visible,
+.menu-panel > button.active {
   background: var(--surface-soft);
 }
 .dashboard-grid,
 body[data-layout='portrait'] .dashboard-grid {
   position: relative;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 9px;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
 }
 .view-picker {
   grid-column: 1;
@@ -2886,7 +2886,7 @@ body[data-layout='portrait'] .dashboard-grid {
 }
 .calendar-panel {
   grid-column: 1;
-  grid-row: 2;
+  grid-row: 1;
   overflow: auto;
 }
 .week-grid:not(.month-view) {
@@ -2913,30 +2913,7 @@ body[data-layout='portrait'] .dashboard-grid {
   width: 100%;
   margin: 0;
 }
-.sidebar,
-body[data-layout='portrait'] .sidebar {
-  display: block;
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: auto;
-  min-height: 0;
-  overflow: visible;
-  z-index: 8;
-}
-.sidebar > summary {
-  margin-right: 178px;
-}
-.sidebar[open] .today-card,
-.sidebar[open] .weather-card:not([hidden]) {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 7px);
-  width: min(360px, 82vw);
-  max-height: min(70dvh, 600px);
-  overflow: auto;
-  box-shadow: var(--shadow);
-}
+
 .day-header {
   display: block;
   width: 100%;
@@ -3071,23 +3048,6 @@ body[data-layout='portrait'] .sidebar {
     padding: 8px 10px;
     font-size: 12px;
   }
-  .view-picker {
-    gap: 3px;
-    padding-bottom: 43px;
-  }
-  .view-picker > button {
-    padding: 8px;
-    font-size: 11px;
-  }
-  .sidebar > summary {
-    margin-right: 0;
-  }
-  .sidebar,
-  body[data-layout='portrait'] .sidebar {
-    top: 43px;
-    right: auto;
-    left: 0;
-  }
 }
 .dialog .person-row input[type='color'] {
   display: block;
@@ -3099,6 +3059,194 @@ body[data-layout='portrait'] .sidebar {
   padding: 2px;
   border: 0;
   background: none;
+}
+.navigation-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex: none;
+  margin-bottom: 10px;
+}
+.navigation-bar .view-picker,
+.navigation-bar .feature-tabs {
+  margin: 0;
+  padding: 0;
+  flex: none;
+}
+body[data-section='calendar'] .feature-tabs > [data-section='calendar'] {
+  display: none;
+}
+body[data-section='calendar'] footer {
+  display: none;
+}
+.navigation-bar .view-picker button,
+.navigation-bar .feature-tabs > button,
+.navigation-bar .feature-tabs > details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+}
+.navigation-bar .view-picker button {
+  min-width: 44px;
+}
+.navigation-bar .feature-tabs {
+  margin-left: auto;
+}
+.navigation-bar .menu-panel {
+  left: auto;
+  right: 0;
+  width: min(400px, calc(100vw - 32px));
+  max-height: 70dvh;
+  overflow: auto;
+}
+.navigation-bar .menu-panel > button {
+  min-height: 44px;
+}
+.menu-panel .filters {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+.menu-panel .filter {
+  min-height: 44px;
+}
+.menu-panel .calendar-tools,
+.menu-panel .sidebar,
+body[data-layout='portrait'] .menu-panel .sidebar {
+  display: block;
+  position: static;
+  margin: 0 0 6px;
+  width: 100%;
+}
+.menu-panel .calendar-tools > summary,
+.menu-panel .sidebar > summary {
+  min-height: 44px;
+  color: var(--text);
+}
+.menu-panel .calendar-tools-panel {
+  position: static;
+  width: 100%;
+  border: 0;
+  box-shadow: none;
+  padding: 12px 0;
+  max-height: none;
+}
+.menu-panel .today-card,
+.menu-panel .weather-card {
+  margin-top: 8px;
+  box-shadow: none;
+}
+.week-grid.month-view {
+  min-width: 0;
+  height: 100%;
+  grid-template-rows: repeat(var(--month-weeks, 6), minmax(0, 1fr));
+}
+.month-view .day-column {
+  padding: 4px 6px;
+}
+.month-view .day-header {
+  min-height: 28px;
+  margin: 0 0 4px;
+  padding: 0 2px 3px;
+}
+.month-view .day-name {
+  display: none;
+}
+.month-view .day-column:nth-child(-n + 7) .day-name {
+  display: block;
+}
+.month-view .day-number {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  font-size: 14px;
+}
+.month-view .day-column:nth-child(7n) {
+  border-right: 0;
+}
+@media (max-height: 650px) {
+  .month-view .day-column {
+    padding: 3px;
+  }
+  .month-view .day-header {
+    min-height: 24px;
+    margin-bottom: 2px;
+    padding: 0;
+  }
+  .page-head {
+    padding: 8px 0;
+  }
+  .page-head h1 {
+    font-size: 26px;
+  }
+  .topbar {
+    padding-bottom: 6px;
+  }
+}
+@media (max-width: 680px) {
+  .page-head {
+    gap: 10px;
+    padding: 10px 0;
+  }
+  .navigation-bar {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .navigation-bar .view-picker {
+    gap: 3px;
+  }
+  .navigation-bar .view-picker button {
+    padding: 6px 9px;
+    font-size: 12px;
+  }
+  .month-view .day-column {
+    padding: 3px;
+  }
+  .month-view .day-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 24px;
+    margin: 0 0 4px;
+    padding: 0;
+    border: 0;
+  }
+  .month-view .day-name {
+    display: none;
+  }
+  .month-view .day-column:nth-child(-n + 7) .day-header {
+    flex-direction: column;
+  }
+  .month-view .day-column:nth-child(-n + 7) .day-name {
+    display: block;
+    font-size: 9px;
+    margin-bottom: 3px;
+  }
+  .month-view .day-number {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+  .month-view .month-dots i {
+    width: 5px;
+    height: 5px;
+  }
+  .month-event-summary {
+    gap: 3px;
+    font-size: 10px;
+  }
+  .month-event-preview {
+    display: none;
+  }
+}
+@media (max-width: 360px) {
+  .navigation-bar .view-picker button {
+    padding: 6px;
+  }
+  .navigation-bar .feature-tabs > details > summary {
+    padding: 8px;
+  }
 }
 .week-grid.day-view {
   height: 100%;
