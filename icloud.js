@@ -1,8 +1,8 @@
-import { DAVClient } from 'tsdav';
 import ICAL from 'ical.js';
 import { randomUUID } from 'node:crypto';
 
 export async function iCloudClient(email, password) {
+  const { DAVClient } = await import('tsdav');
   const client = new DAVClient({
     serverUrl: 'https://caldav.icloud.com/',
     credentials: { username: email, password },

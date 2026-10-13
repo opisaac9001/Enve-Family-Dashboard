@@ -15,7 +15,6 @@ import {
   updatedICloudObject,
 } from './icloud.js';
 import { expandLocalEvent, recurrenceFields } from './recurrence.js';
-import { importDrafts } from './imports.js';
 import { extractLinuxDocumentText } from './ocr-linux.js';
 import {
   aggregateIngredients,
@@ -2246,6 +2245,7 @@ const server = http.createServer(async (request, response) => {
         text = await extractDocumentText(bytes);
       }
       try {
+        const { importDrafts } = await import('./imports.js');
         return json(response, 200, { text, drafts: importDrafts(text, input.type) });
       } catch (cause) {
         return json(response, 200, { text, drafts: [], message: cause.message });

@@ -63,6 +63,12 @@ For household use, run the launcher with a persistent `DATABASE_PATH`; it binds 
 
 ## Brightness and memory
 
+The full WPE kiosk automatically uses its low-memory profile on Linux devices with at most 768 MiB of RAM, including the Pi Zero 2 W. Set `ENVE_LOW_MEMORY=1` to trial it on a larger Pi or `ENVE_LOW_MEMORY=0` to disable it. Cog checks browser memory against a 256 MiB reference and network-process memory against 64 MiB, reclaiming caches earlier. These are memory-pressure thresholds, not hard process caps; the profile does not enable a process-kill threshold. The page cache is disabled because the dashboard stays on one page.
+
+Calendar refreshes are serialized and unchanged data does not rebuild the calendar. Idle transitions use deadlines rather than a one-second display loop. Photo files load only while the slideshow is visible. Text-import and iCloud client libraries load when their features are used and remain available afterward.
+
+On October 13, 2026, an 8 GB Raspberry Pi 4 at 1920 × 1200 measured about 504 MiB used before these changes and 486 MiB afterward with the low-memory profile, an existing seeded household, and Tailscale running. Node RSS decreased from about 97 MiB to 77 MiB; the web process decreased from about 205 MiB to 191 MiB. These are snapshots, not peak limits, and RSS includes shared pages. The full interface still needs an actual Pi Zero 2 W trial covering touch, scrolling, connected-calendar sync, imports, and extended uptime. Do not treat the Pi 4 result as proof of adequate headroom on a 512 MiB board.
+
 The display draws a dark overlay after the configured idle time and during the sleep window. If the touchscreen exposes a writable Linux backlight brightness file, set `ENVE_BACKLIGHT` to that file, such as `/sys/class/backlight/<device>/brightness`. The client reads the current brightness, lowers the physical backlight when dimmed or sleeping, and restores it on exit. Without that path, the overlay works but may not reduce the panel's electrical power use. A touch wakes the screen for 15 minutes during its sleep window.
 
 On the Pi, check `free -h` and `ps -o pid,rss,comm -C node -C enve-family-display` after boot, after a calendar refresh, and while the screen is dimmed. Test Google, iCloud, and Outlook refreshes plus photo/PDF imports before relying on the Pi Zero 2 W as the always-on server. The Mac test used roughly 86 MB for Node and 94 MB for this display with a small disposable data set; those are macOS process figures, not Pi measurements.

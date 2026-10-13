@@ -29,5 +29,16 @@ if [ -z "${WLR_RENDERER:-}" ]; then
 fi
 
 export COG_PLATFORM_WL_VIEW_FULLSCREEN=1
+low_memory=${ENVE_LOW_MEMORY:-auto}
+if [ "$low_memory" = auto ]; then
+  memory_kb=$(awk '/^MemTotal:/ { print $2 }' /proc/meminfo)
+  if [ "$memory_kb" -le 786432 ]; then low_memory=1; else low_memory=0; fi
+fi
+set -- --platform=wl --enable-smooth-scrolling=false --enable-page-cache=false
+if [ "$low_memory" = 1 ]; then
+  set -- "$@" --web-mem-limit=256 --web-check-interval=5 \
+    --web-conservative-threshold=0.5 --web-strict-threshold=0.75 \
+    --net-mem-limit=64 --net-check-interval=5
+fi
 launcher_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-exec cage -- sh -c 'sh "$1/configure-display.sh"; exec cog --platform=wl --enable-smooth-scrolling=false "$2/?kiosk=1"' sh "$launcher_dir" "$url"
+exec cage -- sh -c 'launcher_dir=$1; url=$2; shift 2; sh "$launcher_dir/configure-display.sh"; exec cog "$@" "$url/?kiosk=1"' sh "$launcher_dir" "$url" "$@"

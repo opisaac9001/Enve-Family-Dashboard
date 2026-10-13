@@ -48,6 +48,10 @@ let unlockPromise = null;
 let changeStream = null;
 let celebrationTimeout = null;
 let selectedWifi = null;
+let loadPromise = null;
+let reloadPending = false;
+let renderedState = '';
+let displayTimeout = null;
 const pendingRequests = new Set();
 const snapshotKey = 'enve-offline-state';
 const outboxKey = 'enve-outbox';
@@ -561,22 +565,47 @@ function chooseSeriesScope(action, noun = 'event') {
   });
 }
 
-async function load() {
+function load() {
+  reloadPending = true;
+  if (!loadPromise) {
+    loadPromise = (async () => {
+      while (reloadPending) {
+        reloadPending = false;
+        await loadState();
+      }
+    })().finally(() => {
+      loadPromise = null;
+    });
+  }
+  return loadPromise;
+}
+
+async function loadState() {
+  const context = JSON.stringify([state.section, state.view, dateKey(state.cursor)]);
   const range = viewRange();
   const mealWeek = startOfWeek(state.cursor);
   const from = range.from < mealWeek ? range.from : mealWeek;
   const to = range.to > addDays(mealWeek, 7) ? range.to : addDays(mealWeek, 7);
   try {
     const data = await api(`/api/state?from=${dateKey(from)}&to=${dateKey(to)}`);
+    if (context !== JSON.stringify([state.section, state.view, dateKey(state.cursor)])) {
+      reloadPending = true;
+      return;
+    }
+    const content = JSON.stringify([context, data]);
+    const changed = content !== renderedState;
     state.data = data;
     state.updatedAt = Date.now();
-    saveSnapshot(data);
+    if (changed) saveSnapshot(data);
     renderConnection();
     flushOutbox();
     data.syncFailures.length
       ? showError(data.syncFailures.map((item) => `${item.calendar}: ${item.message}`).join(' · '))
       : clearError();
-    render();
+    if (changed) {
+      render();
+      renderedState = content;
+    }
     if ($('#search-events').value.trim().length >= 2) searchEvents();
   } catch (error) {
     if (error.offline) {
@@ -638,13 +667,14 @@ async function loadPhotos() {
         )
         .join('') || '<p class="hint">No photos added yet.</p>';
     state.photoIndex %= Math.max(state.photos.length, 1);
-    updatePhoto();
+    applyDisplay();
   } catch (error) {
     if (!error.offline) showError(error.message);
   }
 }
 
 function updatePhoto() {
+  if ($('#photo-layer').hidden) return;
   const photo = state.photos[state.photoIndex];
   if (!photo) return;
   $('#photo-image').src = `/api/photos/${photo.id}`;
@@ -2037,6 +2067,8 @@ function applyDisplay() {
         settings.photos_enabled === 'true' &&
         performance.now() - state.idleAt >= Number(settings.photos_after_minutes) * 60000));
   $('#photo-layer').hidden = !showPhoto;
+  if (showPhoto) updatePhoto();
+  else $('#photo-image').removeAttribute('src');
   layer.hidden = showPhoto || !(dim || sleeping || state.dimPreview);
   document.body.dataset.nightSleep = String(nightSleep && !layer.hidden);
   const strength = nightSleep
@@ -2046,6 +2078,22 @@ function applyDisplay() {
   layer.style.background = `rgba(0,0,0,${strength / 100})`;
   layer.style.color = nightSleep ? (strength === 100 ? '#181818' : '#686868') : '';
   $('#dim-clock').textContent = timeFormat.format(now);
+  scheduleDisplay();
+}
+
+function scheduleDisplay() {
+  clearTimeout(displayTimeout);
+  if (!state.data) return;
+  const settings = state.data.settings;
+  const now = performance.now();
+  const deadlines = [now + (60000 - (Date.now() % 60000))];
+  if (Number(settings.dim_after_minutes) > 0)
+    deadlines.push(state.idleAt + Number(settings.dim_after_minutes) * 60000);
+  if (state.photos.length && settings.photos_enabled === 'true')
+    deadlines.push(state.idleAt + Number(settings.photos_after_minutes) * 60000);
+  deadlines.push(state.sleepOverrideUntil);
+  const next = Math.min(...deadlines.filter((deadline) => deadline > now));
+  displayTimeout = setTimeout(applyDisplay, Math.max(1, next - now));
 }
 
 function setEntryType(type) {
@@ -3590,7 +3638,10 @@ document.addEventListener(
   'mousemove',
   (event) => {
     if (!$('#dim-layer').hidden || !$('#photo-layer').hidden) wakeDisplay(event);
-    else state.idleAt = performance.now();
+    else {
+      state.idleAt = performance.now();
+      scheduleDisplay();
+    }
   },
   { capture: true },
 );
@@ -3598,6 +3649,7 @@ document.addEventListener(
   'wheel',
   () => {
     state.idleAt = performance.now();
+    scheduleDisplay();
   },
   { passive: true },
 );
@@ -3622,7 +3674,6 @@ function tick() {
 }
 tick();
 setInterval(tick, 30000);
-setInterval(applyDisplay, 1000);
 setInterval(() => {
   if (state.data) {
     load();
