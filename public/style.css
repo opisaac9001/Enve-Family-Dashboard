@@ -2383,6 +2383,9 @@ body[data-kiosk] .dialog::backdrop {
   text-transform: uppercase;
   opacity: 0.6;
 }
+.dim-layer[data-darkest='true'] span:last-child {
+  visibility: hidden;
+}
 .reminder-panel {
   position: fixed;
   z-index: 30;

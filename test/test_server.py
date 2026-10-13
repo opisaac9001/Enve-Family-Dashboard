@@ -298,6 +298,13 @@ class DashboardApiTest(DashboardServerCase):
         self.assertEqual(self.call("/api/settings", "PATCH", {"sleep_at": "22:30", "wake_at": "06:15"})[0], 200)
         self.assertEqual(self.call(path)[1]["settings"]["sleep_at"], "22:30")
         self.assertEqual(self.call("/api/settings", "PATCH", {"wake_at": "25:00"})[0], 400)
+        self.assertEqual(self.call("/api/settings", "PATCH", {
+            "dim_after_minutes": "0.5", "night_dim_amount": "100",
+        })[0], 200)
+        settings = self.call(path)[1]["settings"]
+        self.assertEqual((settings["dim_after_minutes"], settings["night_dim_amount"]), ("0.5", "100"))
+        self.assertEqual(self.call("/api/settings", "PATCH", {"dim_after_minutes": "0"})[0], 200)
+        self.assertEqual(self.call("/api/settings", "PATCH", {"night_dim_amount": "200"})[0], 400)
         self.assertEqual(self.call("/api/events", "POST", {
             "title": "Invalid", "profileId": "family", "allDay": True,
             "start": "2026-02-31", "end": "2026-03-01",

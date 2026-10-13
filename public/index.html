@@ -832,7 +832,9 @@
                   <option value="landscape">Landscape style</option>
                 </select></label
               ><label
-                >Dim after inactivity<select id="dim-after">
+                >Sleep after inactivity<select id="dim-after">
+                  <option value="0">Never</option>
+                  <option value="0.5">30 seconds</option>
                   <option value="1">1 minute</option>
                   <option value="5">5 minutes</option>
                   <option value="10">10 minutes</option>
@@ -841,11 +843,11 @@
                   <option value="120">2 hours</option>
                 </select></label
               ><label
-                >Dim strength<input
+                >Daytime dimming<input
                   id="dim-amount"
                   type="range"
                   min="10"
-                  max="95"
+                  max="100"
                   step="5" /></label
               ><label class="check-row"
                 ><input id="night-dim" type="checkbox" /> Dim at night</label
@@ -862,7 +864,20 @@
               ><label>Sleep at<input id="sleep-at" type="time" /></label
               ><label>Wake at<input id="wake-at" type="time" /></label>
             </div>
-            <p class="hint">Sleep darkens the screen. Tap to wake it for 15 minutes.</p>
+            <div class="settings-grid">
+              <label
+                >Nighttime sleep brightness<select id="night-dim-amount">
+                  <option value="100">Darkest · black background, faint clock</option>
+                  <option value="98">Very dim · clock and subtle background</option>
+                  <option value="95">Dim · visible background</option>
+                </select></label
+              >
+            </div>
+            <p class="hint">
+              Applies during scheduled sleep and idle sleep after your evening theme time. Tap the
+              screen, click, or press a key to wake. Scheduled sleep stays awake for 15 minutes.
+            </p>
+            <button id="preview-night-dim" class="secondary-button">Preview nighttime sleep</button>
           </section>
           <section data-settings-page="daily">
             <h3>Reminders</h3>

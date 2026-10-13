@@ -384,6 +384,7 @@ for (const [key, value] of Object.entries({
   dim_after_minutes: '10',
   night_dim: 'true',
   dim_amount: '75',
+  night_dim_amount: '100',
   sleep_enabled: 'true',
   sleep_at: '22:00',
   wake_at: '06:00',
@@ -3269,10 +3270,12 @@ const server = http.createServer(async (request, response) => {
           !/^([01]\d|2[0-3]):[0-5]\d$/.test(string)
         )
           throw new Error(`Invalid ${key}.`);
-        if (key === 'dim_after_minutes' && !(Number(string) >= 1 && Number(string) <= 120))
+        if (key === 'dim_after_minutes' && !(Number(string) >= 0 && Number(string) <= 120))
           throw new Error(`Invalid ${key}.`);
-        if (key === 'dim_amount' && !(Number(string) >= 10 && Number(string) <= 95))
+        if (key === 'dim_amount' && !(Number(string) >= 10 && Number(string) <= 100))
           throw new Error(`Invalid ${key}.`);
+        if (key === 'night_dim_amount' && !['95', '98', '100'].includes(string))
+          throw new Error('Choose a nighttime brightness.');
         if (key === 'reminder_minutes' && !['0', '5', '15', '30', '60'].includes(string))
           throw new Error('Choose a reminder time.');
         if (key === 'weather_city' && string.length > 80) throw new Error('Location is too long.');
@@ -3290,6 +3293,7 @@ const server = http.createServer(async (request, response) => {
             'night_dim',
             'dim_after_minutes',
             'dim_amount',
+            'night_dim_amount',
             'sleep_enabled',
             'sleep_at',
             'wake_at',

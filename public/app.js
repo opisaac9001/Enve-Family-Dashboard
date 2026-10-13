@@ -31,6 +31,7 @@ const state = {
   photos: [],
   photoIndex: 0,
   photoPreview: false,
+  dimPreview: null,
   editingMeal: null,
   offline: false,
   updatedAt: 0,
@@ -1816,6 +1817,7 @@ function renderSettings() {
   renderAccentSelection(settings.accent_color || '#F5921A');
   $('#dim-after').value = settings.dim_after_minutes;
   $('#dim-amount').value = settings.dim_amount;
+  $('#night-dim-amount').value = settings.night_dim_amount || '100';
   $('#display-density').value = settings.display_density || 'comfortable';
   $('#text-size').value = settings.text_size || 'normal';
   $('#layout-mode').value = settings.layout_mode || 'auto';
@@ -2009,7 +2011,8 @@ function applyDisplay() {
   document.body.dataset.textSize = settings.text_size;
   document.body.dataset.layout = settings.layout_mode;
   $('#app').style.filter = dark && settings.night_dim === 'true' ? 'brightness(.82)' : '';
-  const dim = Date.now() - state.idleAt >= Number(settings.dim_after_minutes) * 60000;
+  const idleMinutes = Number(settings.dim_after_minutes);
+  const dim = idleMinutes > 0 && Date.now() - state.idleAt >= idleMinutes * 60000;
   const sleepWindow =
     settings.sleep_at < settings.wake_at
       ? current >= settings.sleep_at && current < settings.wake_at
@@ -2020,15 +2023,27 @@ function applyDisplay() {
     sleepWindow &&
     Date.now() >= state.sleepOverrideUntil;
   const layer = $('#dim-layer');
+  const nightSleep =
+    state.dimPreview === 'night' ||
+    sleeping ||
+    (dim && !lightPeriod && settings.night_dim === 'true');
   const showPhoto =
+    !state.dimPreview &&
+    !nightSleep &&
     state.photos.length > 0 &&
     (state.photoPreview ||
       (!sleeping &&
         settings.photos_enabled === 'true' &&
         Date.now() - state.idleAt >= Number(settings.photos_after_minutes) * 60000));
   $('#photo-layer').hidden = !showPhoto;
-  layer.hidden = showPhoto || !(dim || sleeping);
-  layer.style.background = `rgba(0,0,0,${sleeping ? 0.98 : Number(settings.dim_amount) / 100})`;
+  layer.hidden = showPhoto || !(dim || sleeping || state.dimPreview);
+  document.body.dataset.nightSleep = String(nightSleep && !layer.hidden);
+  const strength = nightSleep
+    ? Number(settings.night_dim_amount || 100)
+    : Number(settings.dim_amount);
+  layer.dataset.darkest = String(nightSleep && strength === 100);
+  layer.style.background = `rgba(0,0,0,${strength / 100})`;
+  layer.style.color = nightSleep ? (strength === 100 ? '#181818' : '#686868') : '';
   $('#dim-clock').textContent = timeFormat.format(now);
 }
 
@@ -2419,7 +2434,12 @@ $('#calendar-connected-list').addEventListener('click', (event) => {
 $('#settings-done').addEventListener('click', () => $('#settings-dialog').close());
 $('#preview-dim').addEventListener('click', () => {
   $('#settings-dialog').close();
-  state.idleAt = Date.now() - Number(state.data.settings.dim_after_minutes) * 60000;
+  state.dimPreview = 'day';
+  applyDisplay();
+});
+$('#preview-night-dim').addEventListener('click', () => {
+  $('#settings-dialog').close();
+  state.dimPreview = 'night';
   applyDisplay();
 });
 document
@@ -3118,6 +3138,7 @@ for (const [selector, key] of [
   ['#dark-at', 'dark_at'],
   ['#dim-after', 'dim_after_minutes'],
   ['#dim-amount', 'dim_amount'],
+  ['#night-dim-amount', 'night_dim_amount'],
   ['#display-density', 'display_density'],
   ['#text-size', 'text_size'],
   ['#layout-mode', 'layout_mode'],
@@ -3552,6 +3573,7 @@ function wakeDisplay(event) {
   if (covered) {
     state.sleepOverrideUntil = state.idleAt + 15 * 60000;
     state.photoPreview = false;
+    state.dimPreview = null;
     wakeBlockUntil = state.idleAt + 500;
   }
   if (covered || (event.type !== 'mousemove' && state.idleAt < wakeBlockUntil)) {
@@ -3567,8 +3589,16 @@ document.addEventListener(
   'mousemove',
   (event) => {
     if (!$('#dim-layer').hidden || !$('#photo-layer').hidden) wakeDisplay(event);
+    else state.idleAt = Date.now();
   },
   { capture: true },
+);
+document.addEventListener(
+  'wheel',
+  () => {
+    state.idleAt = Date.now();
+  },
+  { passive: true },
 );
 function tick() {
   const now = new Date();
@@ -3591,6 +3621,7 @@ function tick() {
 }
 tick();
 setInterval(tick, 30000);
+setInterval(applyDisplay, 1000);
 setInterval(() => {
   if (state.data) {
     load();

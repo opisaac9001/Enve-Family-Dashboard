@@ -312,7 +312,7 @@ public:
     bool dark = isDark(now), dim = isDim(now), sleeping = isSleeping(now);
     if (dark != dark_ || dim != dim_ || sleeping != sleeping_ || now / 60 != lastMinute_) dirty_ = true;
     dark_ = dark; dim_ = dim; sleeping_ = sleeping; lastMinute_ = now / 60;
-    backlight_.setPercent(sleeping_ ? 1 : dim_ ? 100 - dimAmount() * 100 / 255
+    backlight_.setPercent(sleeping_ || dim_ ? std::max(1, 100 - dimAmount() * 100 / 255)
       : dark_ && setting("night_dim", "true") == "true" ? 82 : 100);
   }
   bool dirty() const { return dirty_; }
@@ -361,8 +361,8 @@ public:
     if (pinOpen_) { buttons_.clear(); pinPad(p); }
     if (dim_ || sleeping_) {
       SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
-      fill({0, 0, width, height}, rgb(0, 0, 0, sleeping_ ? 250 : dimAmount()));
-      label(dateLabel(std::time(nullptr), "%I:%M %p"), 300, 196, 300, large_, rgb(255, 255, 255));
+      fill({0, 0, width, height}, rgb(0, 0, 0, dimAmount()));
+      label(dateLabel(std::time(nullptr), "%I:%M %p"), 300, 196, 300, large_, dimAmount() == 255 ? rgb(24, 24, 24) : rgb(104, 104, 104));
     }
     if (!captured_ && data_ && std::getenv("ENVE_CAPTURE")) {
       int outputWidth, outputHeight;
@@ -430,10 +430,16 @@ private:
     return start != end && inWindow(dateLabel(now, "%H:%M"), start, end);
   }
   bool isDim(std::time_t now) const {
-    int minutes = std::max(1, std::atoi(setting("dim_after_minutes", "10").c_str()));
-    return now >= lastTouch_ + minutes * 60;
+    double minutes = std::atof(setting("dim_after_minutes", "10").c_str());
+    return minutes > 0 && now >= lastTouch_ + minutes * 60;
   }
-  int dimAmount() const { return std::clamp(std::atoi(setting("dim_amount", "75").c_str()) * 255 / 100, 0, 255); }
+  int dimAmount() const {
+    auto now = std::time(nullptr);
+    bool night = !inWindow(dateLabel(now, "%H:%M"), setting("light_at", "07:00"), setting("dark_at", "19:00"));
+    auto amount = sleeping_ || (night && setting("night_dim", "true") == "true")
+      ? setting("night_dim_amount", "100") : setting("dim_amount", "75");
+    return std::clamp(std::atoi(amount.c_str()) * 255 / 100, 0, 255);
+  }
   void header(const Palette &p) {
     fill({0, 0, width, 54}, p.card);
     label("enve family", 18, 11, 180, large_, p.accent);
