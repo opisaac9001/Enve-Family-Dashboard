@@ -626,6 +626,35 @@
             <p id="settings-calendar-summary" class="settings-summary"></p>
             <p id="settings-calendar-access" class="hint"></p>
           </div>
+          <section id="device-settings" data-settings-page="device">
+            <h3>Device overview</h3>
+            <p id="device-message" class="hint" role="status"></p>
+            <button id="device-owner-signin" class="secondary-button" type="button" hidden>
+              Sign in to manage Tailscale
+            </button>
+            <dl id="device-facts" class="device-facts" hidden></dl>
+            <ul id="device-services" class="device-services" hidden></ul>
+            <div id="device-controls" hidden>
+              <div class="device-timezone">
+                <label>Time zone<select id="device-timezone"></select></label
+                ><button id="device-timezone-save" class="secondary-button" type="button">
+                  Save time zone
+                </button>
+              </div>
+              <div class="device-actions">
+                <button class="secondary-button" type="button" data-device-action="restart-display">
+                  Restart display
+                </button>
+                <button class="secondary-button" type="button" data-device-action="reboot">
+                  Reboot
+                </button>
+                <button class="secondary-button" type="button" data-device-action="poweroff">
+                  Shut down
+                </button>
+              </div>
+            </div>
+            <button id="device-refresh" class="secondary-button" type="button">Refresh</button>
+          </section>
           <section id="wifi-settings" data-settings-page="device" hidden>
             <h3>Wi-Fi on this display</h3>
             <p class="hint">
@@ -1101,6 +1130,9 @@
         <p id="login-error" class="form-error" role="alert"></p>
         <div class="dialog-actions">
           <button class="primary-button" type="submit">Open dashboard</button>
+          <button id="owner-signin-cancel" class="secondary-button" type="button" hidden>
+            Cancel
+          </button>
         </div>
       </form>
     </dialog>

@@ -61,6 +61,22 @@ The sample units in `pi-native/systemd/` start the server at boot and the native
 
 For household use, run the launcher with a persistent `DATABASE_PATH`; it binds the server to the home network and creates a private local device key. Choose no password, a shared password or PIN, or individual adult sign-ins on the touch screen. No password allows anyone who can reach the server to view and change household information. Keep port 4317 on the trusted home network. Phones then connect to `http://<Pi-LAN-address>:4317` or to the private HTTPS address you configure for remote access. Configure the current Wi-Fi network in Raspberry Pi OS or through the full kiosk setup.
 
+## Device settings
+
+Settings → Device & data shows the board, OS, local and Tailscale addresses, memory use, temperature, uptime, and service status. It includes Wi-Fi scanning, Tailscale owner sign-in, backup, time-zone selection, display restart, device restart, and shutdown. Device details refresh when this settings area opens or when Refresh is pressed; they are not polled in the background.
+
+The image installer includes device management. On an existing Linux installation, install it once as an administrator, passing the user that runs the calendar server:
+
+```sh
+sudo sh pi-native/install-device-control.sh isaac
+```
+
+The root-owned helper accepts only installed time zones, restarting active Enve display services, reboot, and poweroff. A systemd socket restricted to the calendar's Linux user starts the helper for each request. It exits afterward. The Node server retains `NoNewPrivileges` and does not receive a root shell or general sudo access. Device endpoints require a local owner or wall-display session; an enabled edit PIN protects changes. Tailscale account changes still require owner sign-in. Phones and remote browsers cannot use these OS controls.
+
+Time-zone changes restart Enve so its cached clock formatters and calendar calculations pick up the new zone. Restart and shutdown ask for confirmation. After shutdown, wait for the display and activity to stop before unplugging power. Reconnect power to start the board again.
+
+This does not yet provide a guided OS/app update installer, Linux account/password administration, or universal hardware brightness control. Those require separate supported workflows; HDMI monitors may not expose brightness or power controls to Linux.
+
 ## Brightness and memory
 
 The full WPE kiosk automatically uses its low-memory profile on Linux devices with at most 768 MiB of RAM, including the Pi Zero 2 W. Set `ENVE_LOW_MEMORY=1` to trial it on a larger Pi or `ENVE_LOW_MEMORY=0` to disable it. Cog checks browser memory against a 256 MiB reference and network-process memory against 64 MiB, reclaiming caches earlier. These are memory-pressure thresholds, not hard process caps; the profile does not enable a process-kill threshold. The page cache is disabled because the dashboard stays on one page.

@@ -19,7 +19,7 @@ esac
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y ca-certificates curl xz-utils network-manager polkitd cage cog wlr-randr \
-  fonts-dejavu-core poppler-utils tesseract-ocr webp
+  fonts-dejavu-core poppler-utils tesseract-ocr webp python3 sudo
 
 if [ "$profile" = orange-pi-zero-3w ]; then
   apt-get install -y chromium xserver-xorg-core xserver-xorg-input-libinput \
@@ -85,6 +85,7 @@ printf '%s\n' "$profile" > /etc/enve-family/device-profile
 install -m 0644 pi-native/systemd/enve-family-tailscale-operator.service \
   /etc/systemd/system/enve-family-tailscale-operator.service
 sh pi-native/install-wifi-permission.sh enve
+ENVE_IMAGE_BUILD=1 sh pi-native/install-device-control.sh enve
 ENVE_IMAGE_BUILD=1 sh pi-native/install-tailscale.sh enve
 systemctl enable NetworkManager enve-family.service "$display_service" \
   enve-family-tailscale-operator.service

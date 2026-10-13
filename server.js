@@ -26,6 +26,7 @@ import { mealIdeas } from './meal-ideas.js';
 import { generateCloudMealIdeas } from './cloud-meal-ideas.js';
 import { feedEvents, fetchFeed, validateFeedUrl } from './feeds.js';
 import { scanWifi, connectWifi } from './wifi.js';
+import { deviceStatus, deviceTimeZones, setDeviceTimeZone, deviceAction } from './device.js';
 import {
   tailscaleStatus,
   startTailscaleLogin,
@@ -1715,6 +1716,42 @@ const server = http.createServer(async (request, response) => {
         return error(response, 400, cause.message);
       }
       return error(response, 404, 'Private access route not found.');
+    }
+    if (path.startsWith('/api/device/') && path !== '/api/device/session') {
+      if (
+        !setupComplete() ||
+        !localSetupBrowser(request) ||
+        !(ownerAuthorized(request) || sessionFor(request)?.role === 'display')
+      )
+        return error(
+          response,
+          403,
+          'Device settings are available to the owner on the Enve device.',
+        );
+      if (request.method === 'POST' && pinHash() && !pinUnlocked(request))
+        return error(response, 423, 'Unlock edits first.');
+      if (
+        request.method === 'POST' &&
+        request.headers.origin &&
+        request.headers.origin !== `http://${request.headers.host}`
+      )
+        return error(response, 403, 'Open device settings on the wall display.');
+      try {
+        if (path === '/api/device/status' && request.method === 'GET')
+          return json(response, 200, {
+            ...(await deviceStatus()),
+            ownerAccess: ownerAuthorized(request),
+          });
+        if (path === '/api/device/timezones' && request.method === 'GET')
+          return json(response, 200, await deviceTimeZones());
+        if (path === '/api/device/timezone' && request.method === 'POST')
+          return json(response, 200, await setDeviceTimeZone((await body(request)).timeZone));
+        if (path === '/api/device/action' && request.method === 'POST')
+          return json(response, 200, await deviceAction((await body(request)).action));
+      } catch (cause) {
+        return error(response, 400, cause.message);
+      }
+      return error(response, 404, 'Device setting not found.');
     }
     if (path === '/api/setup/complete' && request.method === 'POST') {
       if (

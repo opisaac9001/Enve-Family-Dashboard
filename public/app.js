@@ -241,6 +241,185 @@ $('#tailscale-copy').addEventListener('click', async () => {
   }
 });
 
+let deviceTimeZones;
+const deviceActions = {
+  'restart-display': [
+    'Restart display?',
+    'The screen goes dark for a few seconds while the display restarts.',
+    'Restart',
+    'Restarting the display…',
+  ],
+  reboot: [
+    'Reboot device?',
+    'Enve is unavailable for about a minute while the device restarts.',
+    'Reboot',
+    'Rebooting. Enve will be back in about a minute.',
+  ],
+  poweroff: [
+    'Shut down device?',
+    'The device stays off until its power is unplugged and reconnected.',
+    'Shut down',
+    'Shutting down. Reconnect power to start it again.',
+  ],
+};
+
+function formatBytes(bytes) {
+  return bytes >= 1024 ** 3
+    ? `${(bytes / 1024 ** 3).toFixed(1)} GB`
+    : `${Math.round(bytes / 1024 ** 2)} MB`;
+}
+
+function formatUptime(seconds) {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return days ? `${days}d ${hours}h` : hours ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
+function hideDeviceDetails(message) {
+  $('#device-owner-signin').hidden = true;
+  $('#device-facts').hidden = true;
+  $('#device-services').hidden = true;
+  $('#device-controls').hidden = true;
+  $('#device-message').textContent = message;
+}
+
+function renderDeviceSettings(status) {
+  if (typeof status.ownerAccess === 'boolean')
+    $('#device-owner-signin').hidden = status.ownerAccess;
+  const { totalBytes, availableBytes } = status.memory;
+  const facts = [
+    ['Model', status.model],
+    ['Name', status.hostname],
+    ['System', status.os],
+    ['Time zone', status.timeZone],
+    ['Uptime', formatUptime(status.uptimeSeconds)],
+    ['Memory', `${formatBytes(totalBytes - availableBytes)} of ${formatBytes(totalBytes)} used`],
+    [
+      'Temperature',
+      status.temperatureC === null ? 'Not reported' : `${status.temperatureC.toFixed(1)} °C`,
+    ],
+    [
+      'Addresses',
+      status.addresses.map((item) => `${item.address} (${item.name})`).join(', ') ||
+        'Not connected',
+    ],
+  ];
+  $('#device-facts').replaceChildren(
+    ...facts.flatMap(([label, value]) => {
+      const term = document.createElement('dt');
+      term.textContent = label;
+      const detail = document.createElement('dd');
+      detail.textContent = value;
+      return [term, detail];
+    }),
+  );
+  $('#device-services').replaceChildren(
+    ...status.services
+      .filter((service) => service.id !== 'enve-family-display.service' || service.active)
+      .map((service) => {
+        const row = document.createElement('li');
+        const name = document.createElement('span');
+        name.textContent = service.label;
+        const state = document.createElement('strong');
+        state.textContent = service.active ? 'Running' : 'Stopped';
+        state.className = service.active ? 'running' : '';
+        row.append(name, state);
+        return row;
+      }),
+  );
+  $('#device-facts').hidden = false;
+  $('#device-services').hidden = false;
+  $('#device-controls').hidden = !status.controls;
+  $('#device-timezone').value = status.timeZone;
+  $('#device-message').textContent = status.controls
+    ? ''
+    : 'Device management isn’t installed on this display. Rerun the Enve installer to change the time zone or power options here.';
+}
+
+async function loadDeviceSettings() {
+  const refresh = $('#device-refresh');
+  if (refresh.disabled) return;
+  refresh.disabled = true;
+  $('#device-message').textContent = 'Checking this device…';
+  try {
+    const status = await api('/api/device/status');
+    if (!status.available) {
+      hideDeviceDetails(
+        'Device details are shown when Enve runs on the wall display. This computer manages its own settings.',
+      );
+      return;
+    }
+    if (status.controls && !deviceTimeZones) {
+      deviceTimeZones = (await api('/api/device/timezones')).timeZones;
+      $('#device-timezone').replaceChildren(
+        ...deviceTimeZones.map((zone) => new Option(zone.replaceAll('_', ' '), zone)),
+      );
+    }
+    renderDeviceSettings(status);
+  } catch (cause) {
+    hideDeviceDetails(
+      cause.status === 403
+        ? 'Device settings are available to the household owner on the wall display itself.'
+        : cause.message,
+    );
+  } finally {
+    refresh.disabled = false;
+  }
+}
+
+function setDeviceBusy(busy) {
+  $('#device-controls')
+    .querySelectorAll('button, select')
+    .forEach((control) => {
+      control.disabled = busy;
+    });
+}
+
+$('#device-refresh').addEventListener('click', loadDeviceSettings);
+$('#device-owner-signin').addEventListener('click', () => {
+  $('#owner-signin-cancel').hidden = false;
+  $('#login-dialog').showModal();
+});
+$('#owner-signin-cancel').addEventListener('click', () => {
+  $('#access-key').value = '';
+  $('#login-dialog').close();
+});
+$('#device-timezone-save').addEventListener('click', async () => {
+  setDeviceBusy(true);
+  $('#device-message').textContent = 'Saving time zone…';
+  try {
+    renderDeviceSettings(
+      await api('/api/device/timezone', {
+        method: 'POST',
+        body: JSON.stringify({ timeZone: $('#device-timezone').value }),
+      }),
+    );
+    $('#device-message').textContent = 'Time zone saved. Enve will restart to update its clock.';
+  } catch (cause) {
+    $('#device-message').textContent = cause.message;
+  } finally {
+    setDeviceBusy(false);
+  }
+});
+$('#device-controls').addEventListener('click', async (event) => {
+  const action = event.target.closest('[data-device-action]')?.dataset.deviceAction;
+  if (!action) return;
+  const [title, description, confirm, progress] = deviceActions[action];
+  if (!(await askToDelete(title, description, confirm))) return;
+  setDeviceBusy(true);
+  let accepted = false;
+  try {
+    await api('/api/device/action', { method: 'POST', body: JSON.stringify({ action }) });
+    accepted = true;
+    $('#device-message').textContent = progress;
+  } catch (cause) {
+    $('#device-message').textContent = cause.message;
+  } finally {
+    if (!accepted || action === 'restart-display') setDeviceBusy(false);
+  }
+});
+
 function promptUnlock() {
   if (unlockPromise) return unlockPromise;
   $('#pin-error').textContent = '';
@@ -362,6 +541,7 @@ async function api(path, options = {}, retryWallDisplay = true) {
   if (response.status === 401) {
     if (retryWallDisplay && (await openWallDisplay())) return api(path, options, false);
     localStorage.removeItem(snapshotKey);
+    $('#owner-signin-cancel').hidden = true;
     $('#login-dialog').showModal();
     throw Object.assign(new Error('Sign in to continue.'), { status: 401 });
   }
@@ -2372,6 +2552,7 @@ $('.settings-nav').addEventListener('click', (event) => {
   if (!button) return;
   showSettingsGroup(button.dataset.settingsGroup);
   $('#settings-scroll').scrollTop = 0;
+  if (button.dataset.settingsGroup === 'device') loadDeviceSettings();
 });
 $('#settings-dialog').addEventListener('close', () => {
   clearTimeout(tailscaleRefreshTimer);
@@ -3610,6 +3791,10 @@ $('#login-form').addEventListener('submit', async (event) => {
     $('#access-key').value = '';
     await load();
     connectChanges();
+    if ($('#settings-dialog').open && state.settingsGroup === 'device') {
+      loadDeviceSettings();
+      loadTailscaleSettings();
+    }
   } catch (error) {
     $('#login-error').textContent = error.message;
   }

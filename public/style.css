@@ -2083,6 +2083,68 @@ body[data-kiosk] .dialog::backdrop {
 #tailscale-settings button {
   margin: 8px 8px 8px 0;
 }
+.device-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 14px;
+  margin: 12px 0;
+  font-size: 13px;
+}
+.device-facts dt {
+  color: var(--muted);
+}
+.device-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.device-services {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 6px;
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+.device-services li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.device-services strong {
+  color: var(--muted);
+  font-size: 12px;
+}
+.device-services strong.running {
+  color: var(--accent);
+}
+.device-timezone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+  margin: 12px 0;
+}
+.device-timezone label {
+  flex: 1;
+  min-width: 0;
+}
+.device-timezone select {
+  width: 100%;
+}
+.device-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+#device-controls button,
+#device-refresh {
+  min-height: 44px;
+}
 #tailscale-auth,
 #tailscale-address {
   margin: 12px 0;

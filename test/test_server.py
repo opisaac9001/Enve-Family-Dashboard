@@ -935,6 +935,19 @@ class TailscaleAccessTest(DashboardServerCase):
         remote = {**owner, 'Host': 'enve-family.local:4317'}
         self.assertEqual(self.call('/api/tailscale/status', headers=remote)[0], 403)
         self.assertEqual(self.call('/api/tailscale/serve', 'POST', {}, remote)[0], 403)
+        for headers in ({}, member, remote):
+            self.assertEqual(self.call('/api/device/status', headers=headers)[0], 403)
+            self.assertEqual(self.call('/api/device/action', 'POST', {'action': 'reboot'}, headers)[0], 403)
+        self.assertEqual(self.call('/api/device/status', headers=owner)[0], 200)
+        self.assertEqual(self.call('/api/device/action', 'POST', {'action': 'shell'}, owner)[0], 400)
+        self.assertEqual(self.call('/api/device/action', 'POST', {'action': 'reboot'},
+                                  {**owner, 'Origin': 'https://example.com'})[0], 403)
+        _, wall_cookie, _ = self.post_with_cookie('/api/kiosk/session', {})
+        wall = {'Cookie': wall_cookie.split(';')[0]}
+        self.assertEqual(self.call('/api/device/status', headers=wall)[0], 200)
+        self.assertFalse(self.call('/api/device/status', headers=wall)[1]['ownerAccess'])
+        self.assertEqual(self.call('/api/pin', 'POST', {'pin': '2846'}, owner)[0], 200)
+        self.assertEqual(self.call('/api/device/action', 'POST', {'action': 'restart-display'}, wall)[0], 423)
 
 
 class LegacyMealDatabaseTest(DashboardServerCase):
