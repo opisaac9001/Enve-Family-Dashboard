@@ -2880,6 +2880,14 @@ body[data-layout='portrait'] .dashboard-grid {
 .calendar-panel {
   grid-column: 1;
   grid-row: 2;
+  overflow: auto;
+}
+.week-grid:not(.month-view) {
+  height: max-content;
+  min-height: 100%;
+}
+.week-grid:not(.month-view) .day-column {
+  overflow: visible;
 }
 .calendar-tools {
   display: block;
