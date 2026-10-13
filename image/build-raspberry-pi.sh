@@ -22,7 +22,11 @@ esac
 [ -z "$(git -C "$root" status --porcelain)" ] || { echo 'Commit or set aside local changes before building an image.' >&2; exit 1; }
 
 sudo apt-get update
-sudo apt-get install -y coreutils quilt parted qemu-user-static debootstrap zerofree zip \
+qemu_package=qemu-user-static
+if ! apt-cache policy "$qemu_package" | grep -q 'Candidate: [^()]'; then
+  qemu_package=qemu-user-binfmt
+fi
+sudo apt-get install -y coreutils quilt parted "$qemu_package" debootstrap zerofree zip \
   dosfstools e2fsprogs libcap2-bin grep rsync xz-utils file git curl bc gpg pigz xxd \
   arch-test bmap-tools kmod
 
