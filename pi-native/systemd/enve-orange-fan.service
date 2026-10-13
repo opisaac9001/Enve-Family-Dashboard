@@ -1,0 +1,11 @@
+[Unit]
+Description=Start the Orange Pi Zero 3W fan before the board gets hot
+ConditionPathExists=/sys/class/thermal/thermal_zone0/trip_point_0_temp
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'echo 44000 > /sys/class/thermal/thermal_zone0/trip_point_0_temp; echo 44000 > /sys/class/thermal/thermal_zone3/trip_point_0_temp'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

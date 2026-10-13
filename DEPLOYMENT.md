@@ -16,6 +16,16 @@ These are the parts used for the 15.3-inch wall display. Amazon prices and avail
 
 Add a 32 GB microSD card and a suitable USB-C power supply. HDMI carries video but not touch input. The split cable's 140 W rating does not guarantee that a particular charger can power both devices; test video, touch, and shared power before mounting. The Orange Pi Zero 3W needs an OS image made for that board. The Raspberry Pi OS instructions below apply to Raspberry Pi boards only.
 
+The Orange Pi Zero 3W fan on our board normally waits until the CPU reaches 55°C. To have it start at 44°C while leaving the CPU's protective slowdown threshold alone, install [the fan service](pi-native/systemd/enve-orange-fan.service) on an Orange Pi Zero 3W with the same Armbian thermal layout:
+
+```sh
+sudo install -m 0644 pi-native/systemd/enve-orange-fan.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now enve-orange-fan.service
+```
+
+Check `systemctl status enve-orange-fan.service` and confirm both CPU fan trip points read `44000` under `/sys/class/thermal/thermal_zone0/` and `thermal_zone3/`. The board's kernel still controls the fan and can raise it to full speed when needed. This service is specific to the Zero 3W's current thermal zone layout; do not install it on a Raspberry Pi or a different Orange Pi model.
+
 For people who want to flash a prepared Enve image and set up the household on the screen, see the [image build and validation guide](image/README.md). The Raspberry Pi image recipe is ready for a Linux build and physical trial; a verified downloadable image is not published yet. The Orange Pi image still needs a display-capable base and clean-card testing.
 
 ## Target: one Pi for server and display
