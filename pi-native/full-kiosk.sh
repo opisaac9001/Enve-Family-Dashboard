@@ -41,4 +41,5 @@ if [ "$low_memory" = 1 ]; then
     --net-mem-limit=64 --net-check-interval=5
 fi
 launcher_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+. "$launcher_dir/configure-cursor.sh"
 exec cage -- sh -c 'launcher_dir=$1; url=$2; shift 2; sh "$launcher_dir/configure-display.sh"; exec cog "$@" "$url/?kiosk=1"' sh "$launcher_dir" "$url" "$@"

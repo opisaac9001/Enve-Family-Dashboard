@@ -63,7 +63,9 @@ For household use, run the launcher with a persistent `DATABASE_PATH`; it binds 
 
 ## Device settings
 
-For WCH USB touchscreens (`27c0:0859`), the image ignores the controller's duplicate mouse interface while keeping its native touch interface active. This prevents taps from showing a mouse cursor. An existing installation can apply the same rule with `sudo sh pi-native/install-touch-input.sh`, then restart the display. Real USB mice remain available, with the cursor hidden after two seconds of inactivity. Touch hides the cursor immediately, including the first tap that wakes the screen. The ignore property follows [libinput's documented device configuration](https://wayland.freedesktop.org/libinput/doc/latest/device-configuration-via-udev.html).
+For WCH USB touchscreens (`27c0:0859`), the image ignores the controller's duplicate mouse interface while keeping its native touch interface active. An existing installation can apply the same rule with `sudo sh pi-native/install-touch-input.sh`, then restart the display. The ignore property follows [libinput's documented device configuration](https://wayland.freedesktop.org/libinput/doc/latest/device-configuration-via-udev.html).
+
+Cog 0.18's Wayland backend sets a native arrow independently of the page's CSS cursor. The kiosk therefore loads a transparent cursor theme when no mouse is detected at startup. This leaves touch and keyboard input active. Set `ENVE_CURSOR_MODE=hidden` to always hide the native pointer or `ENVE_CURSOR_MODE=visible` to keep it visible. Restart the display after connecting a mouse to a touch-only setup. Browser cursor hiding remains available for browsers that honor CSS; Cog's native pointer does not currently support the page's two-second idle timer.
 
 Settings → Device & data shows the board, OS, local and Tailscale addresses, memory use, temperature, uptime, and service status. It includes Wi-Fi scanning, Tailscale owner sign-in, backup, time-zone selection, display restart, device restart, and shutdown. Device details refresh when this settings area opens or when Refresh is pressed; they are not polled in the background.
 
