@@ -1126,6 +1126,7 @@ function renderTasksPage() {
 }
 
 function render() {
+  $('#settings-button').disabled = !state.data;
   const { from, days } = viewRange();
   const end = addDays(from, days - 1);
   document.body.dataset.section = state.section;
