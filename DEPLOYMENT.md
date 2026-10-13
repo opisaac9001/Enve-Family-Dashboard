@@ -16,6 +16,8 @@ These are the parts used for the 15.3-inch wall display. Amazon prices and avail
 
 Add a 32 GB microSD card and a suitable USB-C power supply. HDMI carries video but not touch input. The split cable's 140 W rating does not guarantee that a particular charger can power both devices; test video, touch, and shared power before mounting. The Orange Pi Zero 3W needs an OS image made for that board. The Raspberry Pi OS instructions below apply to Raspberry Pi boards only.
 
+For people who want to flash a prepared Enve image and set up the household on the screen, see the [image build and validation guide](image/README.md). The Raspberry Pi image recipe is ready for a Linux build and physical trial; a verified downloadable image is not published yet. The Orange Pi image still needs a display-capable base and clean-card testing.
+
 ## Target: one Pi for server and display
 
 Use 64-bit Raspberry Pi OS Lite on a Raspberry Pi 4 for a first installation; the Pi Zero 2 W remains the lower-memory target pending a full physical performance test. Run Node 22.13+ and the native [Pi display](pi-native/README.md) on the same board, with one SQLite database on its SD card. The native display connects to the server through `127.0.0.1`; phones connect to the Pi's LAN address. Chromium, X11, and a desktop environment are not part of this setup.
@@ -44,7 +46,7 @@ A second Pi can drive another native display and connect to the first Pi or a se
 
 ## Private access away from home
 
-For private remote access, connect the server and each phone to the same Tailscale network. Use Tailscale Serve to provide an HTTPS address for this dashboard, then enter that address in the native iPhone app or open it in Safari and choose **Share → Add to Home Screen → Open as Web App**. Tailscale Serve shares the local service within the private network, without a public port.
+For private remote access on a Pi, prepare the OS with `sudo sh pi-native/install-tailscale.sh <Enve Linux user>`. This installs Tailscale using its [official Linux installer](https://tailscale.com/docs/install/linux), starts its service, and gives the Enve service user operator permission. Run it while preparing a custom Enve OS image to ship Tailscale pre-installed. Do not join a personal tailnet or embed an auth key in the image: each household connects its own account after first boot. If using an existing OS image, run the same script once on the device. On the wall display, open **Settings → Device & data → Private access away from home**. Connect the Pi to your tailnet with the displayed Tailscale sign-in link or QR code, then select **Enable private access**. Enve starts Tailscale Serve in the background and shows its private HTTPS address. Install Tailscale on each phone and sign in to the same tailnet, then enter that address in the Enve iPhone app or open it in Safari and choose **Share → Add to Home Screen → Open as Web App**. This does not use Tailscale Funnel or open a public port.
 
 Phones need a connection to the server to view fresh data or synchronize changes. The home-screen app keeps its last loaded view and can queue new local events, tasks, list items, and meals while it knows it is offline. Edits and connected-calendar changes require a connection. Keep the server powered on and Tailscale connected on phones for access away from home.
 

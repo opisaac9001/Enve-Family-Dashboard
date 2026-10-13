@@ -1,0 +1,14 @@
+[Unit]
+Description=Allow Enve Family to manage Tailscale
+After=tailscaled.service
+Requires=tailscaled.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/tailscale set --operator=enve
+RemainAfterExit=yes
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -67,6 +67,12 @@ class DashboardServerCase(unittest.TestCase):
         with response:
             return response.status, json.load(response)
 
+    def post_with_cookie(self, path, payload):
+        request = Request(self.origin + path, data=json.dumps(payload).encode(), method="POST",
+                          headers={"Content-Type": "application/json"})
+        with urlopen(request, timeout=5) as response:
+            return response.status, response.headers.get("Set-Cookie"), json.load(response)
+
 
 class DashboardApiTest(DashboardServerCase):
 
@@ -669,12 +675,6 @@ class FirstRunTest(DashboardServerCase):
         else:
             self.fail(self.server.stderr.read().decode())
 
-    def post_with_cookie(self, path, payload):
-        request = Request(self.origin + path, data=json.dumps(payload).encode(), method="POST",
-                          headers={"Content-Type": "application/json"})
-        with urlopen(request, timeout=5) as response:
-            return response.status, response.headers.get("Set-Cookie"), json.load(response)
-
     def test_connected_program_keys_limit_access_and_can_be_revoked(self):
         payload = {
             'householdName': 'Home', 'signInMode': 'shared',
@@ -901,6 +901,33 @@ class DeviceOnlyFirstRunTest(DashboardServerCase):
         self.assertEqual(super().call('/api/setup/status')[1], {
             'needed': True, 'browserSetupAllowed': True, 'bootstrapRequired': False})
         self.assertEqual(super().call('/api/wifi/networks')[0], 200)
+
+
+class TailscaleAccessTest(DashboardServerCase):
+    def environment(self):
+        return {'ENVE_DEMO_SEED': '0', 'ENVE_TAILSCALE_BIN': '/missing/tailscale'}
+
+    def test_only_local_owner_can_manage_private_access(self):
+        self.assertEqual(self.call('/api/tailscale/status')[0], 403)
+        payload = {
+            'householdName': 'Home', 'signInMode': 'individual',
+            'owner': {'name': 'Alex', 'color': '#6CA8DF', 'username': 'alex', 'password': 'owner password'},
+            'people': [{'name': 'Sam', 'color': '#A88ADD', 'adult': True,
+                        'username': 'sam', 'password': 'member password'}],
+        }
+        self.post_with_cookie('/api/setup/complete', payload)
+        _, owner_cookie, _ = self.post_with_cookie('/api/login', {'username': 'alex', 'key': 'owner password'})
+        _, member_cookie, _ = self.post_with_cookie('/api/login', {'username': 'sam', 'key': 'member password'})
+        owner = {'Cookie': owner_cookie.split(';')[0]}
+        member = {'Cookie': member_cookie.split(';')[0]}
+        self.assertEqual(self.call('/api/tailscale/status')[0], 403)
+        self.assertEqual(self.call('/api/tailscale/status', headers=member)[0], 403)
+        self.assertEqual(self.call('/api/tailscale/status', headers=owner)[1]['installed'], False)
+        self.assertEqual(self.call('/api/tailscale/login', 'POST', {}, owner)[0], 400)
+        self.assertEqual(self.call('/api/tailscale/serve', 'POST', {}, owner)[0], 400)
+        remote = {**owner, 'Host': 'enve-family.local:4317'}
+        self.assertEqual(self.call('/api/tailscale/status', headers=remote)[0], 403)
+        self.assertEqual(self.call('/api/tailscale/serve', 'POST', {}, remote)[0], 403)
 
 
 class LegacyMealDatabaseTest(DashboardServerCase):

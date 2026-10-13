@@ -111,6 +111,8 @@ Build the native display from [pi-native/](pi-native/) and run it alongside the 
 
 The [deployment guide](DEPLOYMENT.md#hardware-in-our-orange-pi-build) also lists the exact Orange Pi Zero 3W, touchscreen, and cables used in the current wall-display build.
 
+A [flashable Raspberry Pi image recipe](image/README.md) now includes Enve, its full-screen display, Wi-Fi setup support, and Tailscale. A verified public image and the separate Orange Pi Zero 3W image still require clean-card hardware tests.
+
 The dashboard is intended for one household. It supports no password, a shared sign-in, or separate adult accounts; the household owner manages accounts when sign-ins are on. The Tasks tab shows all tasks with status, person, and type filters; tasks live in their own full tab. Offline edits to connected calendar events are not implemented. The full-feature Pi kiosk runs the complete interface with WPE WebKit and an on-screen keyboard. Measure its memory use and responsiveness on the target Pi Zero 2 W and display before relying on it. The native display supports an optional Linux backlight brightness path; actual screen power control depends on the touchscreen hardware.
 
 ## Connect other programs

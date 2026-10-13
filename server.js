@@ -27,6 +27,12 @@ import { mealIdeas } from './meal-ideas.js';
 import { generateCloudMealIdeas } from './cloud-meal-ideas.js';
 import { feedEvents, fetchFeed, validateFeedUrl } from './feeds.js';
 import { scanWifi, connectWifi } from './wifi.js';
+import {
+  tailscaleStatus,
+  startTailscaleLogin,
+  enableTailscaleServe,
+  disableTailscaleServe,
+} from './tailscale.js';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const host = process.env.HOST || '127.0.0.1';
@@ -466,6 +472,10 @@ function wifiAuthorized(request) {
         (localSetupBrowser(request) && sessionFor(request)?.role === 'display')
       : localSetupBrowser(request) || deviceAuthorized(request))
   );
+}
+
+function tailscaleAuthorized(request) {
+  return setupComplete() && localSetupBrowser(request) && ownerAuthorized(request);
 }
 
 function sessionFor(request) {
@@ -1684,6 +1694,27 @@ const server = http.createServer(async (request, response) => {
       } catch (cause) {
         return error(response, 400, cause.message);
       }
+    }
+    if (path.startsWith('/api/tailscale/')) {
+      if (!tailscaleAuthorized(request))
+        return error(
+          response,
+          403,
+          'Private access can only be set up by the owner on the Enve device.',
+        );
+      try {
+        if (path === '/api/tailscale/status' && request.method === 'GET')
+          return json(response, 200, await tailscaleStatus());
+        if (path === '/api/tailscale/login' && request.method === 'POST')
+          return json(response, 200, await startTailscaleLogin());
+        if (path === '/api/tailscale/serve' && request.method === 'POST')
+          return json(response, 200, await enableTailscaleServe());
+        if (path === '/api/tailscale/serve' && request.method === 'DELETE')
+          return json(response, 200, await disableTailscaleServe());
+      } catch (cause) {
+        return error(response, 400, cause.message);
+      }
+      return error(response, 404, 'Private access route not found.');
     }
     if (path === '/api/setup/complete' && request.method === 'POST') {
       if (

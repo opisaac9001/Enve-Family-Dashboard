@@ -2073,6 +2073,23 @@ body[data-kiosk] .dialog::backdrop {
   color: var(--muted);
   margin: 10px 0;
 }
+#tailscale-settings button {
+  margin: 8px 8px 8px 0;
+}
+#tailscale-auth,
+#tailscale-address {
+  margin: 12px 0;
+  overflow-wrap: anywhere;
+}
+#tailscale-qr {
+  display: block;
+  margin-top: 12px;
+  background: white;
+  border-radius: 8px;
+}
+#tailscale-operator-command {
+  user-select: all;
+}
 .settings-scroll input[type='range'] {
   width: 100%;
   accent-color: var(--accent);

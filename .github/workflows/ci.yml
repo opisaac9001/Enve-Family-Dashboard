@@ -16,4 +16,6 @@ jobs:
       - run: npm ci
       - run: npm run format:check
       - run: npm test
+      - run: bash -n image/build-raspberry-pi.sh image/raspberry-pi/stage/prerun.sh image/raspberry-pi/stage/01-enve/00-run.sh
+      - run: sh -n image/install-enve.sh pi-native/install-tailscale.sh
       - run: docker build -t enve-family-dashboard:ci .

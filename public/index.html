@@ -631,6 +631,75 @@
               </button>
             </div>
           </section>
+          <section id="tailscale-settings" data-settings-page="device">
+            <h3>Private access away from home</h3>
+            <p class="hint">
+              Connect this display to your Tailscale network, then open Enve on your iPhones
+              anywhere. Each phone also needs the Tailscale app signed in to the same network.
+            </p>
+            <p id="tailscale-message" class="hint" role="status">Checking this device…</p>
+            <div id="tailscale-setup" hidden>
+              <p id="tailscale-install" class="hint" hidden>
+                Install Tailscale on this device first. Follow the
+                <a href="https://tailscale.com/docs/install/linux" target="_blank" rel="noopener"
+                  >official Linux instructions</a
+                >, then come back and refresh.
+              </p>
+              <p id="tailscale-permission" class="hint" hidden>
+                Enve needs one-time permission to manage Tailscale on this device. Run
+                <code id="tailscale-operator-command"></code> in the device terminal, then try
+                again.
+              </p>
+              <button id="tailscale-login" class="secondary-button" type="button" hidden>
+                Connect this device
+              </button>
+              <div id="tailscale-auth" hidden>
+                <p class="hint">
+                  Open this Tailscale sign-in link on your phone, or scan the code. Return here
+                  after approving the device.
+                </p>
+                <a id="tailscale-auth-link" target="_blank" rel="noopener"></a>
+                <img
+                  id="tailscale-qr"
+                  alt="Tailscale sign-in QR code"
+                  width="160"
+                  height="160"
+                  hidden
+                />
+              </div>
+              <button id="tailscale-serve" class="primary-button" type="button" hidden>
+                Enable private access
+              </button>
+              <p id="tailscale-https-help" class="hint" hidden>
+                If your tailnet asks to enable HTTPS, follow
+                <a
+                  href="https://tailscale.com/docs/how-to/set-up-https-certificates"
+                  target="_blank"
+                  rel="noopener"
+                  >Tailscale’s HTTPS setup</a
+                >, then return here.
+              </p>
+              <p id="tailscale-conflict" class="hint" hidden>
+                This device already shares another service with Tailscale. Review that setup before
+                enabling Enve.
+              </p>
+              <div id="tailscale-address" hidden>
+                <p class="hint">
+                  Use this address in the Enve iPhone app after connecting your phone to Tailscale:
+                </p>
+                <a id="tailscale-address-link" target="_blank" rel="noopener"></a>
+                <button id="tailscale-copy" class="secondary-button" type="button">
+                  Copy address
+                </button>
+                <button id="tailscale-disable" class="secondary-button" type="button">
+                  Turn off private access
+                </button>
+              </div>
+            </div>
+            <button id="tailscale-refresh" class="secondary-button" type="button">
+              Refresh status
+            </button>
+          </section>
           <section data-settings-page="daily">
             <h3>Weather</h3>
             <div class="settings-grid">

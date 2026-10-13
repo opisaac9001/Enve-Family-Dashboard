@@ -144,6 +144,97 @@ $('#wifi-settings-connect').addEventListener('click', async () => {
   }
 });
 
+let tailscaleRefreshTimer;
+
+function renderTailscaleSettings(status) {
+  const message = $('#tailscale-message');
+  $('#tailscale-setup').hidden = false;
+  $('#tailscale-install').hidden = status.installed;
+  $('#tailscale-operator-command').textContent = status.operatorCommand || '';
+  $('#tailscale-login').hidden =
+    !status.installed || status.connected || status.state === 'Unavailable';
+  $('#tailscale-serve').hidden = !status.connected || status.serving || status.conflict;
+  $('#tailscale-https-help').hidden = !status.connected || status.serving;
+  $('#tailscale-conflict').hidden = !status.conflict || !!status.message;
+  $('#tailscale-address').hidden = !status.serving || !status.url;
+  $('#tailscale-auth').hidden = !status.loginUrl || status.connected;
+  $('#tailscale-qr').hidden = !status.loginQr || status.connected;
+  $('#tailscale-permission').hidden = true;
+  if (status.loginUrl && !status.connected) {
+    $('#tailscale-auth-link').href = status.loginUrl;
+    $('#tailscale-auth-link').textContent = status.loginUrl;
+    if (status.loginQr) $('#tailscale-qr').src = status.loginQr;
+  }
+  if (status.url) {
+    $('#tailscale-address-link').href = status.url;
+    $('#tailscale-address-link').textContent = status.url;
+  }
+  message.textContent =
+    status.message ||
+    (status.serving
+      ? 'Enve is available privately through Tailscale.'
+      : status.connected
+        ? 'This device is connected to Tailscale. Enable private access to get an Enve address.'
+        : status.loginUrl
+          ? 'Waiting for you to approve this device in Tailscale.'
+          : status.installed
+            ? 'Tailscale is installed. Connect this device to continue.'
+            : 'Tailscale is not installed on this device.');
+  clearTimeout(tailscaleRefreshTimer);
+  if (status.loginUrl && !status.connected && $('#settings-dialog').open)
+    tailscaleRefreshTimer = setTimeout(loadTailscaleSettings, 4000);
+}
+
+async function loadTailscaleSettings() {
+  try {
+    const response = await fetch('/api/tailscale/status');
+    if (response.status === 403) {
+      $('#tailscale-settings').hidden = true;
+      return;
+    }
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Could not check Tailscale.');
+    $('#tailscale-settings').hidden = false;
+    renderTailscaleSettings(result);
+  } catch (cause) {
+    $('#tailscale-message').textContent = cause.message;
+  }
+}
+
+async function changeTailscale(path, method, button) {
+  button.disabled = true;
+  $('#tailscale-message').textContent = 'Updating private access…';
+  try {
+    const result = await api(path, { method });
+    renderTailscaleSettings(result);
+  } catch (cause) {
+    $('#tailscale-message').textContent = cause.message;
+    if (cause.message.includes('operator permission')) $('#tailscale-permission').hidden = false;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+$('#tailscale-refresh').addEventListener('click', loadTailscaleSettings);
+$('#tailscale-login').addEventListener('click', (event) =>
+  changeTailscale('/api/tailscale/login', 'POST', event.currentTarget),
+);
+$('#tailscale-serve').addEventListener('click', (event) =>
+  changeTailscale('/api/tailscale/serve', 'POST', event.currentTarget),
+);
+$('#tailscale-disable').addEventListener('click', (event) =>
+  changeTailscale('/api/tailscale/serve', 'DELETE', event.currentTarget),
+);
+$('#tailscale-copy').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText($('#tailscale-address-link').href);
+    $('#tailscale-message').textContent = 'Address copied. Paste it into the Enve iPhone app.';
+  } catch {
+    $('#tailscale-message').textContent =
+      'Select the address above to copy it into the Enve iPhone app.';
+  }
+});
+
 function promptUnlock() {
   if (unlockPromise) return unlockPromise;
   $('#pin-error').textContent = '';
@@ -1916,6 +2007,7 @@ $('#settings-button').addEventListener('click', () => {
   loadSignIns();
   loadIntegrationKeys();
   loadWifiSettings();
+  loadTailscaleSettings();
 });
 $('.settings-nav').addEventListener('click', (event) => {
   const button = event.target.closest('[data-settings-group]');
@@ -1924,6 +2016,7 @@ $('.settings-nav').addEventListener('click', (event) => {
   $('#settings-scroll').scrollTop = 0;
 });
 $('#settings-dialog').addEventListener('close', () => {
+  clearTimeout(tailscaleRefreshTimer);
   $('#integration-token').value = '';
   $('#integration-secret').hidden = true;
 });

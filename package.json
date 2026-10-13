@@ -10,7 +10,7 @@
     "start:configured": "node --env-file=.env server.js",
     "format": "prettier --write \"*.js\" \"public/*.{html,css,js}\" \"test/*.mjs\"",
     "format:check": "prettier --check \"*.js\" \"public/*.{html,css,js}\" \"test/*.mjs\"",
-    "test": "node test/test_icloud.mjs && node test/test_recurrence.mjs && node test/test_feeds.mjs && node test/test_cloud_meals.mjs && node test/test_wifi.mjs && python3 -m unittest discover -s test -v"
+    "test": "node test/test_icloud.mjs && node test/test_recurrence.mjs && node test/test_feeds.mjs && node test/test_cloud_meals.mjs && node test/test_wifi.mjs && node test/test_tailscale.mjs && python3 -m unittest discover -s test -v"
   },
   "engines": {
     "node": ">=22.13"
