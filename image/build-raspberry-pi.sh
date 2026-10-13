@@ -38,6 +38,8 @@ git -C "$root" archive HEAD | tar -x -C "$build_dir/enve-stage/01-enve/files/app
 rm "$build_dir/pi-gen/stage2/EXPORT_IMAGE"
 rm "$build_dir/pi-gen/export-image/01-user-rename/00-packages"
 rm "$build_dir/pi-gen/export-image/01-user-rename/01-run.sh"
+sed -i '/python3 -m apt_listchanges.populate_database --profile apt/d' \
+  "$build_dir/pi-gen/export-image/05-finalise/01-run.sh"
 cat > "$build_dir/pi-gen/config" <<EOF
 IMG_NAME='enve-family-raspberry-pi'
 PI_GEN_RELEASE='Enve Family'
