@@ -17,4 +17,4 @@ done
 
 export COG_PLATFORM_WL_VIEW_FULLSCREEN=1
 launcher_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-exec cage -- sh -c 'sh "$1/configure-display.sh"; exec cog --platform=wl "$2/?kiosk=1"' sh "$launcher_dir" "$url"
+exec cage -- sh -c 'sh "$1/configure-display.sh"; exec cog --platform=wl --enable-smooth-scrolling=false "$2/?kiosk=1"' sh "$launcher_dir" "$url"
