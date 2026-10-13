@@ -1,0 +1,2 @@
+# WCH touchscreens expose a duplicate mouse interface alongside native touch.
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_VENDOR_ID}=="27c0", ENV{ID_MODEL_ID}=="0859", ENV{ID_USB_INTERFACE_NUM}=="02", ENV{ID_INPUT_MOUSE}=="1", ENV{ID_INPUT_TOUCHSCREEN}!="1", ENV{LIBINPUT_IGNORE_DEVICE}="1"

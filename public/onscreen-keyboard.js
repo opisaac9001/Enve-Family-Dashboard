@@ -16,15 +16,25 @@ if (kioskKeyboardEnabled) {
 
   hideCursor();
   if (window.PointerEvent) {
-    document.addEventListener('pointermove', (event) => {
-      if (event.pointerType === 'mouse') showCursor();
-    });
-    document.addEventListener('pointerdown', (event) => {
-      if (event.pointerType !== 'mouse') hideCursor();
-    });
+    window.addEventListener(
+      'pointermove',
+      (event) => {
+        if (event.pointerType === 'mouse') showCursor();
+        else hideCursor();
+      },
+      { capture: true },
+    );
+    window.addEventListener(
+      'pointerdown',
+      (event) => {
+        if (event.pointerType !== 'mouse') hideCursor();
+      },
+      { capture: true },
+    );
+    window.addEventListener('touchstart', hideCursor, { capture: true, passive: true });
   } else {
-    document.addEventListener('mousemove', showCursor);
-    document.addEventListener('touchstart', hideCursor, { passive: true });
+    window.addEventListener('mousemove', showCursor, { capture: true });
+    window.addEventListener('touchstart', hideCursor, { capture: true, passive: true });
   }
 
   const keyboard = document.createElement('div');

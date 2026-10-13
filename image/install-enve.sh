@@ -86,6 +86,7 @@ install -m 0644 pi-native/systemd/enve-family-tailscale-operator.service \
   /etc/systemd/system/enve-family-tailscale-operator.service
 sh pi-native/install-wifi-permission.sh enve
 ENVE_IMAGE_BUILD=1 sh pi-native/install-device-control.sh enve
+ENVE_IMAGE_BUILD=1 sh pi-native/install-touch-input.sh
 ENVE_IMAGE_BUILD=1 sh pi-native/install-tailscale.sh enve
 systemctl enable NetworkManager enve-family.service "$display_service" \
   enve-family-tailscale-operator.service

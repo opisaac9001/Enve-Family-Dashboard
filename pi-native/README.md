@@ -63,6 +63,8 @@ For household use, run the launcher with a persistent `DATABASE_PATH`; it binds 
 
 ## Device settings
 
+For WCH USB touchscreens (`27c0:0859`), the image ignores the controller's duplicate mouse interface while keeping its native touch interface active. This prevents taps from showing a mouse cursor. An existing installation can apply the same rule with `sudo sh pi-native/install-touch-input.sh`, then restart the display. Real USB mice remain available, with the cursor hidden after two seconds of inactivity. Touch hides the cursor immediately, including the first tap that wakes the screen. The ignore property follows [libinput's documented device configuration](https://wayland.freedesktop.org/libinput/doc/latest/device-configuration-via-udev.html).
+
 Settings → Device & data shows the board, OS, local and Tailscale addresses, memory use, temperature, uptime, and service status. It includes Wi-Fi scanning, Tailscale owner sign-in, backup, time-zone selection, display restart, device restart, and shutdown. Device details refresh when this settings area opens or when Refresh is pressed; they are not polled in the background.
 
 The image installer includes device management. On an existing Linux installation, install it once as an administrator, passing the user that runs the calendar server:
