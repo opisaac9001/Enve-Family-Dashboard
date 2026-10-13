@@ -2,6 +2,20 @@
 
 Use one server and one SQLite database for the household. Phones and wall displays open that server; they do not keep separate calendars. Changes to local items notify other open devices immediately, and the iPhone app refreshes when it returns to the foreground.
 
+## Hardware in our Orange Pi build
+
+These are the parts used for the 15.3-inch wall display. Amazon prices and availability may change.
+
+| Part | Purpose |
+|---|---|
+| [Orange Pi Zero 3W, 4 GB](https://www.amazon.com/dp/B0GXYPM431) with heatsink and fan | Runs the Enve server and wall display. |
+| [Showscren 15.3-inch 1920 × 1200 touchscreen](https://www.amazon.com/dp/B0GC555YPC) | Wall display. |
+| [ZeniKon 1-foot mini-HDMI to mini-HDMI cable](https://www.amazon.com/dp/B0FDB9WCYZ) | Video from the board to the monitor. |
+| [Anker 2-in-1 USB-C cable, 6 feet, white](https://www.amazon.com/dp/B0DGLSXGZV) | Intended to power the board and monitor from one charger. |
+| [HOTNOW 6-inch USB-C data cable, five-pack](https://www.amazon.com/dp/B0DPN758M2) | Short data cables also used with other test devices. One may carry touch input between the monitor and a USB host port on the board if the ports and cable reach. |
+
+Add a 32 GB microSD card and a suitable USB-C power supply. HDMI carries video but not touch input. The split cable's 140 W rating does not guarantee that a particular charger can power both devices; test video, touch, and shared power before mounting. The Orange Pi Zero 3W needs an OS image made for that board. The Raspberry Pi OS instructions below apply to Raspberry Pi boards only.
+
 ## Target: one Pi for server and display
 
 Use 64-bit Raspberry Pi OS Lite on a Raspberry Pi 4 for a first installation; the Pi Zero 2 W remains the lower-memory target pending a full physical performance test. Run Node 22.13+ and the native [Pi display](pi-native/README.md) on the same board, with one SQLite database on its SD card. The native display connects to the server through `127.0.0.1`; phones connect to the Pi's LAN address. Chromium, X11, and a desktop environment are not part of this setup.

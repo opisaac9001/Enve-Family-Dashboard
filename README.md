@@ -109,6 +109,8 @@ The app-specific password is stored in the server's private local SQLite databas
 
 Build the native display from [pi-native/](pi-native/) and run it alongside the Node server on Raspberry Pi OS Lite. The display connects to `http://127.0.0.1:4317`; phones connect to the Pi's LAN address. The native Pi display does not use Chromium or a desktop environment. Confirm Pi performance, touch input, and backlight control with the actual display hardware. See [DEPLOYMENT.md](DEPLOYMENT.md).
 
+The [deployment guide](DEPLOYMENT.md#hardware-in-our-orange-pi-build) also lists the exact Orange Pi Zero 3W, touchscreen, and cables used in the current wall-display build.
+
 The dashboard is intended for one household. It supports no password, a shared sign-in, or separate adult accounts; the household owner manages accounts when sign-ins are on. The Tasks tab shows all tasks with status, person, and type filters; tasks live in their own full tab. Offline edits to connected calendar events are not implemented. The full-feature Pi kiosk runs the complete interface with WPE WebKit and an on-screen keyboard. Measure its memory use and responsiveness on the target Pi Zero 2 W and display before relying on it. The native display supports an optional Linux backlight brightness path; actual screen power control depends on the touchscreen hardware.
 
 ## Connect other programs
