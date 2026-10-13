@@ -1678,8 +1678,8 @@ const server = http.createServer(async (request, response) => {
         );
       try {
         return json(response, 200, await scanWifi());
-      } catch {
-        return error(response, 503, 'Could not scan for Wi-Fi networks. Try again.');
+      } catch (cause) {
+        return error(response, 503, cause.message);
       }
     }
     if (path === '/api/wifi/connect' && request.method === 'POST') {

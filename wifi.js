@@ -50,23 +50,34 @@ function fields(line) {
 
 export async function scanWifi() {
   if (process.platform !== 'linux') return { available: false, networks: [] };
-  const output = await run(
-    [
-      '--terse',
-      '--escape',
-      'yes',
-      '--fields',
-      'IN-USE,SSID,SIGNAL,SECURITY',
-      'device',
-      'wifi',
-      'list',
-      'ifname',
-      'wlan0',
-      '--rescan',
-      'yes',
-    ],
-    15000,
-  );
+  let output;
+  try {
+    output = await run(
+      [
+        '--terse',
+        '--escape',
+        'yes',
+        '--fields',
+        'IN-USE,SSID,SIGNAL,SECURITY',
+        'device',
+        'wifi',
+        'list',
+        'ifname',
+        'wlan0',
+        '--rescan',
+        'yes',
+      ],
+      15000,
+    );
+  } catch (cause) {
+    if (cause.code === 'ENOENT')
+      throw new Error('Wi-Fi setup requires NetworkManager on this device.');
+    if (/not authorized|not permitted|permission/i.test(cause.message))
+      throw new Error('Enve needs permission to scan for Wi-Fi on this device.');
+    if (/NetworkManager is not running/i.test(cause.message))
+      throw new Error('The Wi-Fi service is not running on this device.');
+    throw new Error('Could not scan for Wi-Fi networks. Try again.');
+  }
   const networks = new Map();
   for (const line of output.split('\n')) {
     if (!line) continue;

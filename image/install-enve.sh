@@ -4,10 +4,27 @@ set -eu
 [ "$(id -u)" -eq 0 ] || { echo 'Run as root inside the image.' >&2; exit 1; }
 [ -f /opt/enve-family/package-lock.json ] || { echo 'Enve source is missing from the image.' >&2; exit 1; }
 
+profile=${ENVE_DEVICE_PROFILE:-raspberry-pi}
+case "$profile" in
+  raspberry-pi) ;;
+  orange-pi-zero-3w)
+    [ -f /opt/enve-family-pvr/usr/lib/libVK_IMG.so ] || {
+      echo 'Prepare the Orange Pi PowerVR driver under /opt/enve-family-pvr first.' >&2
+      exit 1
+    }
+    ;;
+  *) echo 'Choose raspberry-pi or orange-pi-zero-3w.' >&2; exit 1 ;;
+esac
+
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y ca-certificates curl xz-utils network-manager polkitd cage cog \
+apt-get install -y ca-certificates curl xz-utils network-manager polkitd cage cog wlr-randr \
   fonts-dejavu-core poppler-utils tesseract-ocr webp
+
+if [ "$profile" = orange-pi-zero-3w ]; then
+  apt-get install -y chromium xserver-xorg-core xserver-xorg-input-libinput \
+    x11-xserver-utils xauth dbus-user-session python3 netplan.io libxcb-dri2-0
+fi
 
 node_version=22.22.0
 node_archive="node-v${node_version}-linux-arm64.tar.xz"
@@ -33,13 +50,43 @@ install -d -m 0700 -o enve -g enve /opt/enve-family/data
 sed -e 's/REPLACE_USER/enve/g' -e 's#REPLACE_ROOT#/opt/enve-family#g' \
   -e 's#/usr/bin/node#/usr/local/bin/node#g' \
   pi-native/systemd/enve-family.service > /etc/systemd/system/enve-family.service
+if [ "$profile" = raspberry-pi ]; then
+  display_service=enve-family-display.service
+else
+  display_service=enve-family-vulkan-display.service
+  install -d /usr/local/lib/enve-family /etc/enve-family
+  install -m 0755 pi-native/x11-vulkan-kiosk.sh /usr/local/lib/enve-family/x11-vulkan-kiosk.sh
+  install -m 0644 pi-native/x11-orange-pi.conf /etc/enve-family/orange-pi-xorg.conf
+  sed 's/REPLACE_USER/enve/g' pi-native/systemd/enve-family-vulkan-display.service \
+    > /etc/systemd/system/enve-family-vulkan-display.service
+  printf 'pvrsrvkm\n' > /etc/modules-load.d/enve-pvr.conf
+  install -d /etc/systemd/system/enve-family-full-display.service.d
+  cat > /etc/systemd/system/enve-family-full-display.service.d/software.conf <<'EOF'
+[Service]
+Environment=WLR_RENDERER=pixman
+Environment=WLR_DRM_DEVICES=/dev/dri/card0
+EOF
+  cat > /etc/netplan/99-enve-wifi-manager.yaml <<'EOF'
+network:
+  version: 2
+  wifis:
+    wlan0:
+      renderer: NetworkManager
+EOF
+  chmod 0600 /etc/netplan/99-enve-wifi-manager.yaml
+  netplan generate
+fi
+fallback_service=enve-family-display.service
+[ "$profile" = raspberry-pi ] || fallback_service=enve-family-full-display.service
 sed -e 's/REPLACE_USER/enve/g' -e 's#REPLACE_ROOT#/opt/enve-family#g' \
-  pi-native/systemd/enve-family-full-display.service > /etc/systemd/system/enve-family-display.service
+  pi-native/systemd/enve-family-full-display.service > "/etc/systemd/system/$fallback_service"
+install -d /etc/enve-family
+printf '%s\n' "$profile" > /etc/enve-family/device-profile
 install -m 0644 pi-native/systemd/enve-family-tailscale-operator.service \
   /etc/systemd/system/enve-family-tailscale-operator.service
 sh pi-native/install-wifi-permission.sh enve
 ENVE_IMAGE_BUILD=1 sh pi-native/install-tailscale.sh enve
-systemctl enable NetworkManager enve-family.service enve-family-display.service \
+systemctl enable NetworkManager enve-family.service "$display_service" \
   enve-family-tailscale-operator.service
 
 chown -R root:root /opt/enve-family

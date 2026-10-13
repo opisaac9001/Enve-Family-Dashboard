@@ -16,4 +16,23 @@ The recipe produced a compressed image in an ARM64 Ubuntu build VM on October 12
 
 ## Orange Pi Zero 3W
 
-The Orange Pi needs a separate board-specific base image. [Armbian's current Zero 3W board configuration](https://github.com/armbian/build/blob/main/config/boards/orangepizero3w.conf) declares no supported video output, so its minimal image cannot yet be used as a proven wall-display release. The Orange Pi image remains pending a display-capable base and a clean-card test on the 15.3-inch monitor. Do not flash the Raspberry Pi image to an Orange Pi.
+The Orange Pi uses its own Armbian base, kernel, PowerVR driver, and Chromium/Vulkan display. The running 4 GB Zero 3W has passed a cold boot at 1920 × 1200; scrolling showed 22–28 FPS with clear text. Live graphics restart still needs further driver work. The Raspberry Pi profile retains WPE WebKit and its own OS image.
+
+The shared installer has explicit board profiles:
+
+| Profile | Boards | Display | Base OS |
+| --- | --- | --- | --- |
+| `raspberry-pi` | Pi Zero 2 W and Pi 4, 64-bit | WPE WebKit / Cage | Raspberry Pi OS Lite |
+| `orange-pi-zero-3w` | Orange Pi Zero 3W, tested with 4 GB RAM | Chromium / Xorg / PowerVR Vulkan | Armbian Debian 13 with the matching vendor kernel |
+
+For an Orange Pi image, first prepare a board-specific Armbian root filesystem with the matching PowerVR DKMS module, firmware, and root-owned userspace driver under `/opt/enve-family-pvr`, as described in [the display instructions](../pi-native/README.md#orange-pi-vulkan-display). Place a clean Enve checkout at `/opt/enve-family`, then run inside that root filesystem:
+
+```sh
+ENVE_DEVICE_PROFILE=orange-pi-zero-3w sh /opt/enve-family/image/install-enve.sh
+```
+
+The installer selects the Vulkan service and a software fallback, loads the GPU module at boot, and assigns Wi-Fi to NetworkManager. This prevents an Armbian networkd-only base from leaving the in-app scanner unavailable. The Raspberry Pi build stage explicitly selects `raspberry-pi`, so Orange Pi drivers and Chromium are not installed there.
+
+The selected profile is recorded at `/etc/enve-family/device-profile`. Both profiles include the same server, household setup, NetworkManager permissions, and Tailscale support. Never include an existing household database, Wi-Fi credentials, calendar tokens, SSH keys, or Tailscale identity in a reusable image.
+
+A finished Orange Pi flashable image has not yet been built and verified from a clean card. Its root filesystem still needs packaging into the board's own bootable image, followed by clean-card Wi-Fi, touch, GPU, sleep/wake, and Tailscale tests. The Raspberry Pi image also retains its physical verification gate above. Do not flash either board's image onto the other board.

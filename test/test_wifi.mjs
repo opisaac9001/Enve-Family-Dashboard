@@ -56,6 +56,8 @@ try {
   process.env.TEST_FAIL_UP = '1';
   await assert.rejects(connectWifi('Home:Family', 'samplepass123'), /Could not join this network/);
   assert.match(await readFile(log, 'utf8'), /connection delete id enve-/);
+  await rm(binary);
+  await assert.rejects(scanWifi(), /Wi-Fi setup requires NetworkManager/);
 } finally {
   Object.defineProperty(process, 'platform', { value: originalPlatform });
   await rm(directory, { recursive: true, force: true });
