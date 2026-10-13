@@ -35,6 +35,7 @@ const state = {
   offline: false,
   updatedAt: 0,
   flushing: false,
+  timelineKey: null,
 };
 const dayFormat = new Intl.DateTimeFormat(undefined, {
   weekday: 'long',
@@ -697,6 +698,206 @@ function eventTime(event) {
   return event.allDay ? 'All day' : timeFormat.format(new Date(event.start));
 }
 
+const timelineHourHeight = 64;
+const timelineMinItemHeight = 44;
+const hourFormat = new Intl.DateTimeFormat(undefined, { hour: 'numeric' });
+
+function timelineEntries(day) {
+  const key = dateKey(day);
+  const dayStart = new Date(`${key}T00:00:00`).getTime();
+  const dayEnd = new Date(`${dateKey(addDays(day, 1))}T00:00:00`).getTime();
+  const minuteOf = (time) => {
+    if (time <= dayStart) return 0;
+    if (time >= dayEnd) return 1440;
+    const date = new Date(time);
+    return date.getHours() * 60 + date.getMinutes();
+  };
+  const events = state.data.events
+    .filter((event) => visible(event) && !event.allDay && eventOnDay(event, day))
+    .map((event) => {
+      const startTime = Date.parse(event.start);
+      const endTime = Date.parse(event.end);
+      const start = minuteOf(startTime);
+      const end = minuteOf(endTime);
+      return {
+        event,
+        start,
+        end: end <= start ? Math.min(1440, start + (endTime - startTime) / 60000) : end,
+      };
+    });
+  const tasks = state.data.tasks
+    .filter((task) => visible(task) && task.dueDate === key && task.dueTime)
+    .map((task) => {
+      const [hours, minutes] = task.dueTime.split(':').map(Number);
+      const start = hours * 60 + minutes;
+      return { task, start, end: Math.min(start + 30, 1440) };
+    });
+  return layoutTimeline([...events, ...tasks]);
+}
+
+function layoutTimeline(entries) {
+  const sorted = entries
+    .map((entry) => ({
+      ...entry,
+      visualEnd: entry.start + (timelineItemHeight(entry) / timelineHourHeight) * 60,
+    }))
+    .sort((a, b) => a.start - b.start || b.visualEnd - a.visualEnd);
+  let cluster = [];
+  let columns = [];
+  let clusterEnd = -1;
+  const closeCluster = () => {
+    for (const entry of cluster) entry.columns = columns.length;
+    cluster = [];
+    columns = [];
+  };
+  for (const entry of sorted) {
+    if (entry.start >= clusterEnd) closeCluster();
+    let column = columns.findIndex((end) => end <= entry.start);
+    if (column < 0) column = columns.push(0) - 1;
+    columns[column] = entry.visualEnd;
+    entry.column = column;
+    cluster.push(entry);
+    clusterEnd = Math.max(clusterEnd, entry.visualEnd);
+  }
+  closeCluster();
+  return sorted;
+}
+
+function timelineMinimumHeight() {
+  return state.data.settings.text_size === 'large' ? 56 : timelineMinItemHeight;
+}
+
+function timelineItemHeight(entry) {
+  return Math.max(((entry.end - entry.start) * timelineHourHeight) / 60, timelineMinimumHeight());
+}
+
+function renderTimelineEntry(entry) {
+  const pxPerMinute = timelineHourHeight / 60;
+  const height = timelineItemHeight(entry);
+  const top = entry.start * pxPerMinute;
+  const compact = height < (state.data.settings.text_size === 'large' ? 80 : 56) ? ' compact' : '';
+  const position = `top:${top}px;height:${height}px;--column:${entry.column};--columns:${entry.columns}`;
+  if (entry.event) {
+    const { event } = entry;
+    const startDate = new Date(event.start);
+    const endDate = new Date(event.end);
+    const formatter =
+      startDate.getTimezoneOffset() === endDate.getTimezoneOffset()
+        ? timeFormat
+        : new Intl.DateTimeFormat(undefined, {
+            hour: 'numeric',
+            minute: '2-digit',
+            timeZoneName: 'short',
+          });
+    const time = `${formatter.format(startDate)} – ${formatter.format(endDate)}`;
+    return `<button type="button" class="timeline-item timeline-event${compact}" style="${position};--event-color:${eventColor(event)}" data-event="${escapeHtml(event.id)}" title="${escapeHtml(`${event.title} · ${time}`)}"><strong>${escapeHtml(event.title)}</strong><span>${time} · ${escapeHtml(profile(event.profileId)?.name || '')}</span></button>`;
+  }
+  const { task } = entry;
+  const person = profile(task.profileId);
+  const time = timeFormat.format(new Date(`${task.dueDate}T${task.dueTime}`));
+  const claim = task.claimable && !task.claimedBy && !task.completed;
+  const copy = `<span class="timeline-task-copy"><strong>${escapeHtml(task.title)}</strong><span>${time} · ${escapeHtml(person?.name || 'Anyone')}${task.starValue ? ` · ★ ${task.starValue}` : ''}${task.skipped ? ' · skipped' : ''}</span></span>`;
+  const attributes = `class="timeline-item timeline-task${compact}${task.completed ? ' completed' : ''}" style="${position};--event-color:${person?.color || '#F5921A'}" title="${escapeHtml(task.title)}"`;
+  return claim
+    ? `<div ${attributes}><span class="claim-dot" aria-label="Unclaimed">☆</span>${copy}</div>`
+    : `<label ${attributes}><input class="task-check" type="checkbox" data-task="${task.id}" aria-label="Complete ${escapeHtml(task.title)}" ${task.completed ? 'checked' : ''}>${copy}</label>`;
+}
+
+function renderTimeline(days) {
+  const today = dateKey(new Date());
+  const keys = days.map((day) => dateKey(day));
+  const hours = Array.from(
+    { length: 25 },
+    (_, hour) =>
+      `<span class="timeline-hour" data-hour="${hour}" style="top:${hour * timelineHourHeight}px">${hourFormat.format(new Date(2000, 0, 1, hour))}</span>`,
+  ).join('');
+  const columns = days
+    .map(
+      (day, index) =>
+        `<div class="timeline-day ${keys[index] === today ? 'today' : ''}" data-timeline-day="${keys[index]}">${timelineEntries(day).map(renderTimelineEntry).join('')}${keys[index] === today ? '<div class="timeline-now" data-now aria-hidden="true"></div>' : ''}</div>`,
+    )
+    .join('');
+  const nowLabel = keys.includes(today)
+    ? '<span class="timeline-now-label" data-now-label role="img"></span>'
+    : '';
+  return `<div class="timeline-body"><div class="timeline-hours" aria-hidden="true">${hours}${nowLabel}</div>${columns}</div>`;
+}
+
+function renderWeekTimeline(from) {
+  const today = dateKey(new Date());
+  const days = Array.from({ length: 7 }, (_, index) => addDays(from, index));
+  const dayEvents = days.map((day) =>
+    state.data.events.filter((event) => visible(event) && eventOnDay(event, day)),
+  );
+  const headers = days
+    .map((day, index) => {
+      const key = dateKey(day);
+      return `<button type="button" class="day-header ${key === today ? 'today' : ''}" data-day="${key}" aria-label="Show ${escapeHtml(dayFormat.format(day))}, ${dayEvents[index].length} events"><span class="day-name">${new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(day)}</span><span class="day-number">${day.getDate()}</span></button>`;
+    })
+    .join('');
+  const allDay = dayEvents.map((events) => events.filter((event) => event.allDay));
+  const allDayRow = allDay.some((events) => events.length)
+    ? `<span class="timeline-allday-label">All day</span>${allDay
+        .map(
+          (events) =>
+            `<div class="timeline-allday">${events.map((event) => `<button type="button" class="timeline-allday-event" style="--event-color:${eventColor(event)}" data-event="${escapeHtml(event.id)}" title="${escapeHtml(event.title)}">${escapeHtml(event.title)}</button>`).join('')}</div>`,
+        )
+        .join('')}`
+    : '';
+  return `<div class="timeline timeline-week" style="--timeline-days:7;--hour-height:${timelineHourHeight}px"><div class="timeline-head"><span class="timeline-corner"></span>${headers}${allDayRow}</div>${renderTimeline(days)}</div>`;
+}
+
+function timelineScroller() {
+  return state.view === 'day' ? $('#week-grid .day-event-list') : $('.calendar-panel');
+}
+
+function updateNowLine() {
+  const line = $('#week-grid [data-now]');
+  if (!line) return;
+  const now = new Date();
+  const label = $('#week-grid [data-now-label]');
+  line.hidden = label.hidden = line.parentElement.dataset.timelineDay !== dateKey(now);
+  if (line.hidden) return;
+  const minute = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  const top = `${(minute * timelineHourHeight) / 60}px`;
+  line.style.top = top;
+  label.style.top = `${Math.max(10, (minute * timelineHourHeight) / 60)}px`;
+  label.textContent = timeFormat.format(now);
+  label.setAttribute('aria-label', `Current time, ${timeFormat.format(now)}`);
+  document
+    .querySelectorAll('#week-grid .timeline-hour')
+    .forEach((hour) =>
+      hour.classList.toggle('near-now', Math.abs(Number(hour.dataset.hour) * 60 - minute) < 15),
+    );
+}
+
+function scrollTimeline() {
+  const scroller = timelineScroller();
+  const body = $('#week-grid .timeline-body');
+  if (!scroller || !body) return;
+  const headHeight = $('#week-grid .timeline-head')?.offsetHeight || 0;
+  const offset =
+    body.getBoundingClientRect().top -
+    scroller.getBoundingClientRect().top +
+    scroller.scrollTop -
+    headHeight;
+  const now = $('#week-grid [data-now]');
+  const items = [...body.querySelectorAll('.timeline-item')].map((item) => item.offsetTop);
+  const first = items.length ? Math.min(...items) : 8 * timelineHourHeight;
+  const target = now
+    ? now.offsetTop - (scroller.clientHeight - headHeight) / 3
+    : first - timelineHourHeight / 2;
+  scroller.scrollTop = Math.max(0, offset + target);
+  if (state.view === 'week') {
+    if (now) {
+      const day = now.parentElement.getBoundingClientRect();
+      const gutter = $('#week-grid .timeline-hours').offsetWidth;
+      const left = day.left - scroller.getBoundingClientRect().left + scroller.scrollLeft - gutter;
+      scroller.scrollLeft = Math.max(0, left - (scroller.clientWidth - gutter - day.width) / 2);
+    } else scroller.scrollLeft = 0;
+  }
+}
+
 function renderCountdown() {
   const panel = $('#next-up');
   const next = state.reminderData?.events
@@ -1020,64 +1221,88 @@ function render() {
       )
       .join('');
     const today = dateKey(new Date());
+    const timelineKey = ['day', 'week'].includes(state.view)
+      ? `${state.view}:${dateKey(from)}`
+      : null;
+    const previousScroll = timelineKey === state.timelineKey ? timelineScroller()?.scrollTop : null;
     $('#week-grid').className = `week-grid ${state.view}-view`;
     $('#week-grid').style.setProperty('--month-weeks', state.view === 'month' ? days / 7 : 6);
-    $('#week-grid').innerHTML = Array.from({ length: days }, (_, index) => {
-      const day = addDays(from, index);
-      const key = dateKey(day);
-      const events = state.data.events
-        .filter((event) => visible(event) && eventOnDay(event, day))
-        .sort((a, b) => Number(b.allDay) - Number(a.allDay) || a.start.localeCompare(b.start));
-      const meals = ['day', 'schedule'].includes(state.view)
-        ? calendarMeals(state.data.meals, key)
-        : [];
-      const eventContent =
-        state.view === 'month'
-          ? `<div class="month-event-summary" aria-label="${events.length} events"><span class="month-dots">${events
-              .slice(0, 4)
-              .map((event) => `<i style="background:${eventColor(event)}"></i>`)
-              .join(
-                '',
-              )}</span>${events.length ? `<span>${events.length}</span>` : ''}</div><div class="month-event-preview">${events
-              .slice(0, 3)
-              .map(
-                (event) =>
-                  `<span style="--event-color:${eventColor(event)}">${escapeHtml(event.title)}</span>`,
-              )
-              .join('')}</div>`
-          : events.length
-            ? events
-                .map(
-                  (event) =>
-                    `<button class="day-event" style="--event-color:${eventColor(event)}" data-event="${escapeHtml(event.id)}" title="${escapeHtml(event.title)}"><strong>${escapeHtml(event.title)}</strong><span>${eventTime(event)} · ${escapeHtml(profile(event.profileId)?.name || '')}</span></button>`,
+    $('#week-grid').style.setProperty('--timeline-min-height', `${timelineMinimumHeight()}px`);
+    $('#week-grid').innerHTML =
+      state.view === 'week'
+        ? renderWeekTimeline(from)
+        : Array.from({ length: days }, (_, index) => {
+            const day = addDays(from, index);
+            const key = dateKey(day);
+            const events = state.data.events
+              .filter((event) => visible(event) && eventOnDay(event, day))
+              .sort(
+                (a, b) => Number(b.allDay) - Number(a.allDay) || a.start.localeCompare(b.start),
+              );
+            const meals = ['day', 'schedule'].includes(state.view)
+              ? calendarMeals(state.data.meals, key)
+              : [];
+            const eventContent =
+              state.view === 'month'
+                ? `<div class="month-event-summary" aria-label="${events.length} events"><span class="month-dots">${events
+                    .slice(0, 4)
+                    .map((event) => `<i style="background:${eventColor(event)}"></i>`)
+                    .join(
+                      '',
+                    )}</span>${events.length ? `<span>${events.length}</span>` : ''}</div><div class="month-event-preview">${events
+                    .slice(0, 3)
+                    .map(
+                      (event) =>
+                        `<span style="--event-color:${eventColor(event)}">${escapeHtml(event.title)}</span>`,
+                    )
+                    .join('')}</div>`
+                : events.length
+                  ? events
+                      .map(
+                        (event) =>
+                          `<button class="day-event" style="--event-color:${eventColor(event)}" data-event="${escapeHtml(event.id)}" title="${escapeHtml(event.title)}"><strong>${escapeHtml(event.title)}</strong><span>${eventTime(event)} · ${escapeHtml(profile(event.profileId)?.name || '')}</span></button>`,
+                      )
+                      .join('')
+                  : '<div class="empty-day">A little breathing room</div>';
+            const mealContent = meals.length
+              ? `<div class="day-meals" role="group" aria-label="Meals for ${escapeHtml(dayFormat.format(day))}"><span class="day-meals-label">On the menu</span>${meals.map((meal) => `<button type="button" class="day-meal" style="--meal-color:${mealColor(meal)}" data-calendar-meal="${escapeHtml(meal.day)}" aria-label="${escapeHtml(mealLabel(meal))}: ${escapeHtml(meal.title)}. Open meal plan"><small>${escapeHtml(mealLabel(meal))}</small><span>${escapeHtml(meal.title)}</span></button>`).join('')}</div>`
+              : '';
+            let content = `${eventContent}${mealContent}`;
+            if (state.view === 'day') {
+              const dailyTasks = state.data.tasks
+                .filter(
+                  (task) =>
+                    visible(task) &&
+                    ((task.dueDate === key &&
+                      (!task.dueTime || (task.claimable && !task.claimedBy && !task.completed))) ||
+                      (!task.completed && !task.dueDate) ||
+                      (key === today && !task.completed && task.dueDate < key)),
                 )
-                .join('')
-            : '<div class="empty-day">A little breathing room</div>';
-      const mealContent = meals.length
-        ? `<div class="day-meals" role="group" aria-label="Meals for ${escapeHtml(dayFormat.format(day))}"><span class="day-meals-label">On the menu</span>${meals.map((meal) => `<button type="button" class="day-meal" style="--meal-color:${mealColor(meal)}" data-calendar-meal="${escapeHtml(meal.day)}" aria-label="${escapeHtml(mealLabel(meal))}: ${escapeHtml(meal.title)}. Open meal plan"><small>${escapeHtml(mealLabel(meal))}</small><span>${escapeHtml(meal.title)}</span></button>`).join('')}</div>`
-        : '';
-      let content = `${eventContent}${mealContent}`;
-      if (state.view === 'day') {
-        const dailyTasks = state.data.tasks
-          .filter(
-            (task) =>
-              visible(task) &&
-              (task.dueDate === key ||
-                (!task.completed && !task.dueDate) ||
-                (key === today && !task.completed && task.dueDate < key)),
-          )
-          .sort(
-            (a, b) =>
-              Number(a.completed) - Number(b.completed) ||
-              (a.dueDate || key).localeCompare(b.dueDate || key) ||
-              (a.dueTime || '23:59').localeCompare(b.dueTime || '23:59') ||
-              a.title.localeCompare(b.title),
-          );
-        const openTasks = dailyTasks.filter((task) => !task.completed).length;
-        content = `<section class="day-agenda" aria-label="Daily schedule"><div class="day-plan-heading"><h2>Schedule</h2><span>${events.length} ${events.length === 1 ? 'event' : 'events'}</span></div><div class="day-event-list">${eventContent}</div></section><aside class="day-plan-side"><section class="day-task-panel" aria-label="Tasks for ${escapeHtml(dayFormat.format(day))}"><div class="day-plan-heading"><h2>To do</h2><button type="button" class="secondary-button" data-add-day-task="${key}">＋ Add task</button></div><div class="day-task-summary"><span>${openTasks ? `${openTasks} to do` : 'All caught up'}</span><button type="button" class="text-button" data-section="tasks">All tasks →</button></div><div class="day-task-list">${dailyTasks.length ? dailyTasks.map((task) => renderTaskRow(task, 'day')).join('') : '<p class="empty-copy">No tasks for this day.</p>'}</div></section>${mealContent}</aside>`;
+                .sort(
+                  (a, b) =>
+                    Number(a.completed) - Number(b.completed) ||
+                    (a.dueDate || key).localeCompare(b.dueDate || key) ||
+                    (a.dueTime || '23:59').localeCompare(b.dueTime || '23:59') ||
+                    a.title.localeCompare(b.title),
+                );
+              const openTasks = dailyTasks.filter((task) => !task.completed).length;
+              const allDay = events.filter((event) => event.allDay);
+              const allDayContent = allDay.length
+                ? `<div class="day-allday-list">${allDay.map((event) => `<button type="button" class="timeline-allday-event" style="--event-color:${eventColor(event)}" data-event="${escapeHtml(event.id)}" title="${escapeHtml(event.title)}"><small>All day</small> ${escapeHtml(event.title)}</button>`).join('')}</div>`
+                : '';
+              content = `<section class="day-agenda" aria-label="Daily schedule"><div class="day-plan-heading"><h2>Schedule</h2><span>${events.length} ${events.length === 1 ? 'event' : 'events'}</span></div>${allDayContent}<div class="day-event-list"><div class="timeline" style="--timeline-days:1;--hour-height:${timelineHourHeight}px">${renderTimeline([day])}</div></div></section><aside class="day-plan-side"><section class="day-task-panel" aria-label="Tasks for ${escapeHtml(dayFormat.format(day))}"><div class="day-plan-heading"><h2>To do</h2><button type="button" class="secondary-button" data-add-day-task="${key}">＋ Add task</button></div><div class="day-task-summary"><span>${openTasks ? `${openTasks} to do` : 'All caught up'}</span><button type="button" class="text-button" data-section="tasks">All tasks →</button></div><div class="day-task-list">${dailyTasks.length ? dailyTasks.map((task) => renderTaskRow(task, 'day')).join('') : '<p class="empty-copy">No tasks for this day.</p>'}</div></section>${mealContent}</aside>`;
+            }
+            return `<div class="day-column ${key === today ? 'today' : ''} ${day.getMonth() !== state.cursor.getMonth() && state.view === 'month' ? 'outside-month' : ''}" data-day-column="${key}"><button type="button" class="day-header" data-day="${key}" aria-label="Show ${escapeHtml(dayFormat.format(day))}, ${events.length} events"><span class="day-name">${new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(day)}</span><span class="day-number">${day.getDate()}</span></button>${content}</div>`;
+          }).join('');
+    if (timelineKey) {
+      updateNowLine();
+      if (previousScroll != null) timelineScroller().scrollTop = previousScroll;
+      else {
+        if (state.view === 'day') $('.calendar-panel').scrollTop = 0;
+        scrollTimeline();
       }
-      return `<div class="day-column ${key === today ? 'today' : ''} ${day.getMonth() !== state.cursor.getMonth() && state.view === 'month' ? 'outside-month' : ''}" data-day-column="${key}"><button type="button" class="day-header" data-day="${key}" aria-label="Show ${escapeHtml(dayFormat.format(day))}, ${events.length} events"><span class="day-name">${new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(day)}</span><span class="day-number">${day.getDate()}</span></button>${content}</div>`;
-    }).join('');
+    } else if (state.timelineKey) $('.calendar-panel').scrollTop = 0;
+    state.timelineKey = timelineKey;
     const todayEvents = state.data.events
       .filter((event) => visible(event) && eventOnDay(event, new Date()))
       .sort((a, b) => a.start.localeCompare(b.start));
@@ -1098,7 +1323,7 @@ function render() {
       : '<div class="empty-copy">Nothing on the calendar today.</div>';
     renderTodayMeals();
     renderCountdown();
-  }
+  } else state.timelineKey = null;
   if (state.section === 'tasks') renderTasksPage();
   if (state.section === 'lists') renderLists();
   if (state.section === 'meals') {
@@ -1929,6 +2154,7 @@ async function saveSetting(key, value) {
 
 $('#today-button').addEventListener('click', () => {
   state.cursor = new Date();
+  state.timelineKey = null;
   load();
 });
 $('#previous-week').addEventListener('click', () => moveCursor(-1));
@@ -2316,7 +2542,7 @@ $('#delete-event').addEventListener('click', async () => {
 $('#app').addEventListener('change', async (event) => {
   if (
     !event.target.matches('[data-task]') ||
-    !event.target.closest('#all-task-list, .day-task-list')
+    !event.target.closest('#all-task-list, .day-task-list, .timeline')
   )
     return;
   const task = state.data.tasks.find((item) => item.id === event.target.dataset.task);
@@ -3356,7 +3582,10 @@ function tick() {
   }
   if (state.data) {
     applyDisplay();
-    if (state.section === 'calendar') renderCountdown();
+    if (state.section === 'calendar') {
+      renderCountdown();
+      updateNowLine();
+    }
     checkReminders();
   }
 }
