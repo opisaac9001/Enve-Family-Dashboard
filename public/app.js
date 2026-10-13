@@ -962,7 +962,9 @@ function render() {
               ? `${dayFormat.format(startOfWeek(state.cursor))} – ${dayFormat.format(addDays(startOfWeek(state.cursor), 6))}`
               : state.view === 'day'
                 ? 'Your day at a glance'
-                : `${dayFormat.format(from)} – ${dayFormat.format(end)}`;
+                : state.view === 'month'
+                  ? 'Choose a day to see everything planned'
+                  : `${dayFormat.format(from)} – ${dayFormat.format(end)}`;
   $('#previous-week').setAttribute(
     'aria-label',
     state.view === 'month' && state.section === 'calendar'
@@ -994,6 +996,9 @@ function render() {
       button.classList.toggle('active', button.dataset.section === state.section),
     );
   document
+    .querySelector('#more-sections summary')
+    .classList.toggle('active', ['lists', 'meals', 'rewards', 'import'].includes(state.section));
+  document
     .querySelectorAll('[data-view]')
     .forEach((button) => button.classList.toggle('active', button.dataset.view === state.view));
   if (state.section === 'calendar') {
@@ -1014,7 +1019,29 @@ function render() {
       const meals = ['day', 'schedule'].includes(state.view)
         ? calendarMeals(state.data.meals, key)
         : [];
-      return `<div class="day-column ${key === today ? 'today' : ''} ${day.getMonth() !== state.cursor.getMonth() && state.view === 'month' ? 'outside-month' : ''}"><div class="day-header"><div class="day-name">${new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(day)}</div><div class="day-number">${day.getDate()}</div></div>${events.length ? events.map((event) => `<button class="day-event" style="--event-color:${eventColor(event)}" data-event="${escapeHtml(event.id)}" title="${escapeHtml(event.title)}"><strong>${escapeHtml(event.title)}</strong><span>${eventTime(event)} · ${escapeHtml(profile(event.profileId)?.name || '')}</span></button>`).join('') : '<div class="empty-day">A little breathing room</div>'}${meals.length ? `<div class="day-meals" role="group" aria-label="Meals for ${escapeHtml(dayFormat.format(day))}"><span class="day-meals-label">On the menu</span>${meals.map((meal) => `<button type="button" class="day-meal" style="--meal-color:${mealColor(meal)}" data-calendar-meal="${escapeHtml(meal.day)}" aria-label="${escapeHtml(mealLabel(meal))}: ${escapeHtml(meal.title)}. Open meal plan"><small>${escapeHtml(mealLabel(meal))}</small><span>${escapeHtml(meal.title)}</span></button>`).join('')}</div>` : ''}</div>`;
+      const eventContent =
+        state.view === 'month'
+          ? `<div class="month-event-summary" aria-label="${events.length} events"><span class="month-dots">${events
+              .slice(0, 4)
+              .map((event) => `<i style="background:${eventColor(event)}"></i>`)
+              .join(
+                '',
+              )}</span>${events.length ? `<span>${events.length}</span>` : ''}</div><div class="month-event-preview">${events
+              .slice(0, 3)
+              .map(
+                (event) =>
+                  `<span style="--event-color:${eventColor(event)}">${escapeHtml(event.title)}</span>`,
+              )
+              .join('')}</div>`
+          : events.length
+            ? events
+                .map(
+                  (event) =>
+                    `<button class="day-event" style="--event-color:${eventColor(event)}" data-event="${escapeHtml(event.id)}" title="${escapeHtml(event.title)}"><strong>${escapeHtml(event.title)}</strong><span>${eventTime(event)} · ${escapeHtml(profile(event.profileId)?.name || '')}</span></button>`,
+                )
+                .join('')
+            : '<div class="empty-day">A little breathing room</div>';
+      return `<div class="day-column ${key === today ? 'today' : ''} ${day.getMonth() !== state.cursor.getMonth() && state.view === 'month' ? 'outside-month' : ''}" data-day-column="${key}"><button type="button" class="day-header" data-day="${key}" aria-label="Show ${escapeHtml(dayFormat.format(day))}, ${events.length} events"><span class="day-name">${new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(day)}</span><span class="day-number">${day.getDate()}</span></button>${eventContent}${meals.length ? `<div class="day-meals" role="group" aria-label="Meals for ${escapeHtml(dayFormat.format(day))}"><span class="day-meals-label">On the menu</span>${meals.map((meal) => `<button type="button" class="day-meal" style="--meal-color:${mealColor(meal)}" data-calendar-meal="${escapeHtml(meal.day)}" aria-label="${escapeHtml(mealLabel(meal))}: ${escapeHtml(meal.title)}. Open meal plan"><small>${escapeHtml(mealLabel(meal))}</small><span>${escapeHtml(meal.title)}</span></button>`).join('')}</div>` : ''}</div>`;
     }).join('');
     const todayEvents = state.data.events
       .filter((event) => visible(event) && eventOnDay(event, new Date()))
@@ -1875,6 +1902,7 @@ document.querySelector('.feature-tabs').addEventListener('click', (event) => {
   const button = event.target.closest('[data-section]');
   if (button) {
     state.section = button.dataset.section;
+    $('#more-sections').open = false;
     render();
   }
 });
@@ -2073,6 +2101,7 @@ $('#integration-keys').addEventListener('click', async (event) => {
   }
 });
 $('#add-calendar-button').addEventListener('click', () => {
+  $('#more-sections').open = false;
   renderCalendarConnect();
   $('#calendar-connect-dialog').showModal();
 });
@@ -2188,10 +2217,18 @@ $('#week-grid').addEventListener('click', (event) => {
     return;
   }
   const button = event.target.closest('[data-event]');
-  if (!button) return;
-  const item = state.data.events.find((row) => row.id === button.dataset.event);
-  if (!item) return;
-  showEventDetail(item);
+  if (button) {
+    const item = state.data.events.find((row) => row.id === button.dataset.event);
+    if (item) showEventDetail(item);
+    return;
+  }
+  const day =
+    event.target.closest('[data-day]') ||
+    (state.view === 'month' ? event.target.closest('[data-day-column]') : null);
+  if (!day) return;
+  state.cursor = new Date(`${day.dataset.day || day.dataset.dayColumn}T12:00:00`);
+  state.view = 'day';
+  load();
 });
 $('#edit-event').addEventListener('click', async () => {
   const item = state.selectedEvent;
@@ -3237,6 +3274,7 @@ $('#login-form').addEventListener('submit', async (event) => {
     $('#login-error').textContent = error.message;
   }
 });
+let wakeBlockUntil = 0;
 function wakeDisplay(event) {
   if (!state.data) return;
   const covered = !$('#dim-layer').hidden || !$('#photo-layer').hidden;
@@ -3244,6 +3282,9 @@ function wakeDisplay(event) {
   if (covered) {
     state.sleepOverrideUntil = state.idleAt + 15 * 60000;
     state.photoPreview = false;
+    wakeBlockUntil = state.idleAt + 500;
+  }
+  if (covered || (event.type !== 'mousemove' && state.idleAt < wakeBlockUntil)) {
     if (event.cancelable) event.preventDefault();
     event.stopPropagation();
   }
