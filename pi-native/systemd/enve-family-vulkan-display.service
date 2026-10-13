@@ -1,0 +1,26 @@
+[Unit]
+Description=Enve Family Orange Pi Vulkan display
+After=enve-family.service systemd-modules-load.service systemd-user-sessions.service
+Requires=enve-family.service
+Conflicts=enve-family-full-display.service getty@tty1.service
+OnFailure=enve-family-full-display.service
+
+[Service]
+Type=simple
+PAMName=login
+TTYPath=/dev/tty1
+StandardInput=tty
+StandardOutput=journal
+StandardError=journal
+RuntimeDirectory=enve-family-vulkan
+RuntimeDirectoryMode=0755
+Environment=ENVE_DISPLAY_USER=REPLACE_USER
+Environment=ENVE_PVR_ROOT=/opt/enve-family-pvr
+Environment=ENVE_XORG_CONFIG=/etc/enve-family/orange-pi-xorg.conf
+Environment=ENVE_SERVER_URL=http://127.0.0.1:4317
+ExecStart=/bin/sh /usr/local/lib/enve-family/x11-vulkan-kiosk.sh
+TimeoutStopSec=10
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target

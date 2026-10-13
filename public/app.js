@@ -17,7 +17,7 @@ const state = {
   recipeScaled: new Map(),
   mealSuggestions: [],
   importDrafts: [],
-  idleAt: Date.now(),
+  idleAt: performance.now(),
   sleepOverrideUntil: 0,
   todayKey: dateKey(new Date()),
   selectedEvent: null,
@@ -2012,7 +2012,7 @@ function applyDisplay() {
   document.body.dataset.layout = settings.layout_mode;
   $('#app').style.filter = dark && settings.night_dim === 'true' ? 'brightness(.82)' : '';
   const idleMinutes = Number(settings.dim_after_minutes);
-  const dim = idleMinutes > 0 && Date.now() - state.idleAt >= idleMinutes * 60000;
+  const dim = idleMinutes > 0 && performance.now() - state.idleAt >= idleMinutes * 60000;
   const sleepWindow =
     settings.sleep_at < settings.wake_at
       ? current >= settings.sleep_at && current < settings.wake_at
@@ -2021,7 +2021,7 @@ function applyDisplay() {
     settings.sleep_enabled === 'true' &&
     settings.sleep_at !== settings.wake_at &&
     sleepWindow &&
-    Date.now() >= state.sleepOverrideUntil;
+    performance.now() >= state.sleepOverrideUntil;
   const layer = $('#dim-layer');
   const nightSleep =
     state.dimPreview === 'night' ||
@@ -2034,7 +2034,7 @@ function applyDisplay() {
     (state.photoPreview ||
       (!sleeping &&
         settings.photos_enabled === 'true' &&
-        Date.now() - state.idleAt >= Number(settings.photos_after_minutes) * 60000));
+        performance.now() - state.idleAt >= Number(settings.photos_after_minutes) * 60000));
   $('#photo-layer').hidden = !showPhoto;
   layer.hidden = showPhoto || !(dim || sleeping || state.dimPreview);
   document.body.dataset.nightSleep = String(nightSleep && !layer.hidden);
@@ -3569,7 +3569,7 @@ let wakeBlockUntil = 0;
 function wakeDisplay(event) {
   if (!state.data) return;
   const covered = !$('#dim-layer').hidden || !$('#photo-layer').hidden;
-  state.idleAt = Date.now();
+  state.idleAt = performance.now();
   if (covered) {
     state.sleepOverrideUntil = state.idleAt + 15 * 60000;
     state.photoPreview = false;
@@ -3589,14 +3589,14 @@ document.addEventListener(
   'mousemove',
   (event) => {
     if (!$('#dim-layer').hidden || !$('#photo-layer').hidden) wakeDisplay(event);
-    else state.idleAt = Date.now();
+    else state.idleAt = performance.now();
   },
   { capture: true },
 );
 document.addEventListener(
   'wheel',
   () => {
-    state.idleAt = Date.now();
+    state.idleAt = performance.now();
   },
   { passive: true },
 );
