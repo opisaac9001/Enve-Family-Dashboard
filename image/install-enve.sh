@@ -6,7 +6,7 @@ set -eu
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y ca-certificates curl xz-utils network-manager policykit-1 cage cog \
+apt-get install -y ca-certificates curl xz-utils network-manager polkitd cage cog \
   fonts-dejavu-core poppler-utils tesseract-ocr webp
 
 node_version=22.22.0
