@@ -785,35 +785,6 @@ h2 {
 .month-view .outside-month {
   opacity: 0.42;
 }
-.week-grid.schedule-view {
-  display: block;
-  min-height: 0;
-}
-.schedule-view .day-column {
-  border-right: 0;
-  border-bottom: 1px solid var(--line);
-  padding: 12px 18px;
-}
-.schedule-view .day-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 0;
-  margin: 0;
-  padding: 0;
-  text-align: left;
-}
-.schedule-view .day-number {
-  margin: 0;
-  font-size: 17px;
-}
-.schedule-view .day-event {
-  max-width: 720px;
-}
-.schedule-view .empty-day {
-  text-align: left;
-  padding: 8px 0;
-}
 .feature-section {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -2632,8 +2603,7 @@ body[data-night-sleep='true'] .reminder-panel {
     min-width: 760px;
     min-height: 470px;
   }
-  .day-view,
-  .schedule-view {
+  .day-view {
     min-width: 0;
   }
   .month-view {

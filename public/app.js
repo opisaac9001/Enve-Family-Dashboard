@@ -1451,9 +1451,7 @@ function render() {
               .sort(
                 (a, b) => Number(b.allDay) - Number(a.allDay) || a.start.localeCompare(b.start),
               );
-            const meals = ['day', 'schedule'].includes(state.view)
-              ? calendarMeals(state.data.meals, key)
-              : [];
+            const meals = state.view === 'day' ? calendarMeals(state.data.meals, key) : [];
             const eventContent =
               state.view === 'month'
                 ? `<div class="month-event-summary" aria-label="${events.length} events"><span class="month-dots">${events
