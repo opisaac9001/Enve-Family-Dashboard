@@ -855,15 +855,18 @@ function habitStreak(task) {
   return streak;
 }
 
-function renderTaskRow(task) {
+function renderTaskRow(task, context = 'all') {
   const person = profile(task.profileId);
   const nextId =
     task.rotationProfiles?.length > 1
       ? task.rotationProfiles[(task.rotationIndex + 1) % task.rotationProfiles.length]
       : null;
-  const details = `${escapeHtml(person?.name || '')}${task.dueDate ? ` · ${escapeHtml(task.dueDate)}` : ''}${task.dueTime ? ` ${escapeHtml(task.dueTime)}` : ''} · ${escapeHtml(task.taskType)}${task.repeatRule !== 'none' ? ` · ${escapeHtml(task.repeatRule)}` : ''}${nextId ? ` · Next: ${escapeHtml(profile(nextId)?.name || '')}` : ''}${task.starValue ? ` · ★ ${task.starValue}` : ''}${habitStreak(task) ? ` · ${habitStreak(task)} streak` : ''}`;
+  const details =
+    context === 'day'
+      ? `${escapeHtml(person?.name || 'Anyone')}${task.dueTime ? ` · ${escapeHtml(task.dueTime)}` : ''}${task.dueDate && task.dueDate < dateKey(new Date()) && !task.completed ? ' · Overdue' : ''}${task.starValue ? ` · ★ ${task.starValue}` : ''}`
+      : `${escapeHtml(person?.name || '')}${task.dueDate ? ` · ${escapeHtml(task.dueDate)}` : ''}${task.dueTime ? ` ${escapeHtml(task.dueTime)}` : ''} · ${escapeHtml(task.taskType)}${task.repeatRule !== 'none' ? ` · ${escapeHtml(task.repeatRule)}` : ''}${nextId ? ` · Next: ${escapeHtml(profile(nextId)?.name || '')}` : ''}${task.starValue ? ` · ★ ${task.starValue}` : ''}${habitStreak(task) ? ` · ${habitStreak(task)} streak` : ''}`;
   const claim = task.claimable && !task.claimedBy && !task.completed;
-  return `<div class="task-row ${task.completed ? 'completed' : ''}">${claim ? '<span class="claim-dot">☆</span>' : `<input class="task-check" type="checkbox" data-task="${task.id}" aria-label="Complete ${escapeHtml(task.title)}" ${task.completed ? 'checked' : ''}>`}<div class="task-copy"><strong>${escapeHtml(task.title)}</strong><small><span style="color:${person?.color || '#F5921A'}">●</span> ${details}${task.skipped ? ' · skipped' : ''}</small>${
+  return `<div class="task-row ${task.completed ? 'completed' : ''}">${claim ? '<span class="claim-dot">☆</span>' : `${context === 'day' ? '<label class="day-task-toggle">' : ''}<input class="task-check" type="checkbox" data-task="${task.id}" aria-label="Complete ${escapeHtml(task.title)}" ${task.completed ? 'checked' : ''}>${context === 'day' ? '</label>' : ''}`}<div class="task-copy"><strong>${escapeHtml(task.title)}</strong><small><span style="color:${person?.color || '#F5921A'}">●</span> ${details}${task.skipped ? ' · skipped' : ''}</small>${
     claim
       ? `<div class="claim-controls"><select data-claim-person="${task.id}" aria-label="Person claiming ${escapeHtml(task.title)}">${state.data.profiles
           .filter((item) => !['family', 'enve'].includes(item.id))
@@ -872,7 +875,7 @@ function renderTaskRow(task) {
             '',
           )}</select><button data-claim-task="${task.id}" class="secondary-button">Claim</button></div>`
       : ''
-  }</div>${!task.completed && !claim && task.dueDate ? `<button class="task-skip" data-skip-task="${task.id}">Skip</button>` : ''}<button class="task-delete" data-delete-task="${task.id}" aria-label="Delete ${escapeHtml(task.title)}">×</button></div>`;
+  }</div>${!task.completed && !claim && task.dueDate ? `<button class="task-skip" data-skip-task="${task.id}">Skip</button>` : ''}${context === 'day' ? '' : `<button class="task-delete" data-delete-task="${task.id}" aria-label="Delete ${escapeHtml(task.title)}">×</button>`}</div>`;
 }
 
 function renderTasksPage() {
@@ -913,7 +916,7 @@ function renderTasksPage() {
         a.title.localeCompare(b.title),
     );
   $('#all-task-list').innerHTML = filtered.length
-    ? filtered.map(renderTaskRow).join('')
+    ? filtered.map((task) => renderTaskRow(task)).join('')
     : `<p class="empty-copy">${state.taskStatus === 'open' ? 'All caught up. Add a task when something comes to mind.' : 'No tasks match these filters.'}</p>`;
 }
 
@@ -997,7 +1000,10 @@ function render() {
     );
   document
     .querySelector('#more-sections summary')
-    .classList.toggle('active', ['lists', 'meals', 'rewards', 'import'].includes(state.section));
+    .classList.toggle(
+      'active',
+      ['tasks', 'lists', 'meals', 'rewards', 'import'].includes(state.section),
+    );
   document
     .querySelectorAll('[data-view]')
     .forEach((button) => button.classList.toggle('active', button.dataset.view === state.view));
@@ -1041,7 +1047,30 @@ function render() {
                 )
                 .join('')
             : '<div class="empty-day">A little breathing room</div>';
-      return `<div class="day-column ${key === today ? 'today' : ''} ${day.getMonth() !== state.cursor.getMonth() && state.view === 'month' ? 'outside-month' : ''}" data-day-column="${key}"><button type="button" class="day-header" data-day="${key}" aria-label="Show ${escapeHtml(dayFormat.format(day))}, ${events.length} events"><span class="day-name">${new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(day)}</span><span class="day-number">${day.getDate()}</span></button>${eventContent}${meals.length ? `<div class="day-meals" role="group" aria-label="Meals for ${escapeHtml(dayFormat.format(day))}"><span class="day-meals-label">On the menu</span>${meals.map((meal) => `<button type="button" class="day-meal" style="--meal-color:${mealColor(meal)}" data-calendar-meal="${escapeHtml(meal.day)}" aria-label="${escapeHtml(mealLabel(meal))}: ${escapeHtml(meal.title)}. Open meal plan"><small>${escapeHtml(mealLabel(meal))}</small><span>${escapeHtml(meal.title)}</span></button>`).join('')}</div>` : ''}</div>`;
+      const mealContent = meals.length
+        ? `<div class="day-meals" role="group" aria-label="Meals for ${escapeHtml(dayFormat.format(day))}"><span class="day-meals-label">On the menu</span>${meals.map((meal) => `<button type="button" class="day-meal" style="--meal-color:${mealColor(meal)}" data-calendar-meal="${escapeHtml(meal.day)}" aria-label="${escapeHtml(mealLabel(meal))}: ${escapeHtml(meal.title)}. Open meal plan"><small>${escapeHtml(mealLabel(meal))}</small><span>${escapeHtml(meal.title)}</span></button>`).join('')}</div>`
+        : '';
+      let content = `${eventContent}${mealContent}`;
+      if (state.view === 'day') {
+        const dailyTasks = state.data.tasks
+          .filter(
+            (task) =>
+              visible(task) &&
+              (task.dueDate === key ||
+                (!task.completed && !task.dueDate) ||
+                (key === today && !task.completed && task.dueDate < key)),
+          )
+          .sort(
+            (a, b) =>
+              Number(a.completed) - Number(b.completed) ||
+              (a.dueDate || key).localeCompare(b.dueDate || key) ||
+              (a.dueTime || '23:59').localeCompare(b.dueTime || '23:59') ||
+              a.title.localeCompare(b.title),
+          );
+        const openTasks = dailyTasks.filter((task) => !task.completed).length;
+        content = `<section class="day-agenda" aria-label="Daily schedule"><div class="day-plan-heading"><h2>Schedule</h2><span>${events.length} ${events.length === 1 ? 'event' : 'events'}</span></div><div class="day-event-list">${eventContent}</div></section><aside class="day-plan-side"><section class="day-task-panel" aria-label="Tasks for ${escapeHtml(dayFormat.format(day))}"><div class="day-plan-heading"><h2>To do</h2><button type="button" class="secondary-button" data-add-day-task="${key}">＋ Add task</button></div><div class="day-task-summary"><span>${openTasks ? `${openTasks} to do` : 'All caught up'}</span><button type="button" class="text-button" data-section="tasks">All tasks →</button></div><div class="day-task-list">${dailyTasks.length ? dailyTasks.map((task) => renderTaskRow(task, 'day')).join('') : '<p class="empty-copy">No tasks for this day.</p>'}</div></section>${mealContent}</aside>`;
+      }
+      return `<div class="day-column ${key === today ? 'today' : ''} ${day.getMonth() !== state.cursor.getMonth() && state.view === 'month' ? 'outside-month' : ''}" data-day-column="${key}"><button type="button" class="day-header" data-day="${key}" aria-label="Show ${escapeHtml(dayFormat.format(day))}, ${events.length} events"><span class="day-name">${new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(day)}</span><span class="day-number">${day.getDate()}</span></button>${content}</div>`;
     }).join('');
     const todayEvents = state.data.events
       .filter((event) => visible(event) && eventOnDay(event, new Date()))
@@ -1898,8 +1927,8 @@ $('#today-button').addEventListener('click', () => {
 });
 $('#previous-week').addEventListener('click', () => moveCursor(-1));
 $('#next-week').addEventListener('click', () => moveCursor(1));
-document.querySelector('.feature-tabs').addEventListener('click', (event) => {
-  const button = event.target.closest('[data-section]');
+$('#app').addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-section]');
   if (button) {
     state.section = button.dataset.section;
     $('#more-sections').open = false;
@@ -1907,6 +1936,10 @@ document.querySelector('.feature-tabs').addEventListener('click', (event) => {
   }
 });
 $('#add-task-page').addEventListener('click', () => openEntry('task'));
+$('#calendar-section').addEventListener('click', (event) => {
+  const button = event.target.closest('[data-add-day-task]');
+  if (button) openEntry('task', new Date(`${button.dataset.addDayTask}T12:00:00`));
+});
 $('#tasks-status-tabs').addEventListener('click', (event) => {
   const button = event.target.closest('[data-task-status]');
   if (button) {
@@ -1929,7 +1962,7 @@ document.querySelector('.view-picker').addEventListener('click', (event) => {
     load();
   }
 });
-$('#add-button').addEventListener('click', () => openEntry());
+$('#add-button').addEventListener('click', () => openEntry('event', state.cursor));
 $('#import-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   $('#import-message').textContent = 'Reading and finding drafts…';
@@ -2274,7 +2307,11 @@ $('#delete-event').addEventListener('click', async () => {
   }
 });
 $('#app').addEventListener('change', async (event) => {
-  if (!event.target.matches('[data-task]') || !event.target.closest('#all-task-list')) return;
+  if (
+    !event.target.matches('[data-task]') ||
+    !event.target.closest('#all-task-list, .day-task-list')
+  )
+    return;
   const task = state.data.tasks.find((item) => item.id === event.target.dataset.task);
   const completed = event.target.checked;
   try {
@@ -2290,7 +2327,7 @@ $('#app').addEventListener('change', async (event) => {
   }
 });
 $('#app').addEventListener('click', async (event) => {
-  if (!event.target.closest('#all-task-list')) return;
+  if (!event.target.closest('#all-task-list, .day-task-list')) return;
   const claim = event.target.closest('[data-claim-task]');
   if (claim) {
     const profileId = claim.closest('.task-row').querySelector('[data-claim-person]').value;

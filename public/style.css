@@ -3100,3 +3100,228 @@ body[data-layout='portrait'] .sidebar {
   border: 0;
   background: none;
 }
+.week-grid.day-view {
+  height: 100%;
+}
+.week-grid.day-view .day-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
+  gap: 28px;
+  height: 100%;
+  min-height: 0;
+  padding: 24px;
+  overflow: hidden;
+  background: transparent;
+}
+.day-view .day-header {
+  display: none;
+}
+.day-agenda,
+.day-plan-side,
+.day-task-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.day-plan-side {
+  gap: 20px;
+}
+.day-plan-heading,
+.day-task-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.day-plan-heading {
+  flex: none;
+  margin-bottom: 16px;
+}
+.day-plan-heading h2 {
+  margin: 0;
+  font-size: 28px;
+}
+.day-plan-heading > span,
+.day-task-summary {
+  color: var(--muted);
+  font-size: 14px;
+}
+.day-event-list,
+.day-task-list {
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+.day-view .day-event {
+  max-width: none;
+  min-height: 72px;
+  padding: 13px 16px;
+  margin: 0 0 10px;
+}
+.day-view .day-event strong {
+  font-size: 18px;
+}
+.day-view .day-event span {
+  font-size: 14px;
+}
+body[data-text-size='small'] .day-view .day-event strong {
+  font-size: 16px;
+}
+body[data-text-size='small'] .day-view .day-event span {
+  font-size: 12px;
+}
+body[data-text-size='large'] .day-view .day-event strong {
+  font-size: 21px;
+}
+body[data-text-size='large'] .day-view .day-event span {
+  font-size: 16px;
+}
+.day-task-panel {
+  flex: 1;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-soft);
+}
+.day-task-summary {
+  margin: -4px 0 12px;
+}
+.day-task-summary .text-button {
+  min-height: 36px;
+  border: 0;
+  padding: 0 4px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.day-task-list .task-row {
+  padding: 14px 0;
+}
+.day-task-list .task-copy strong {
+  font-size: 16px;
+}
+.day-task-list .task-copy small {
+  font-size: 13px;
+  line-height: 1.4;
+}
+body[data-text-size='small'] .day-task-list .task-copy strong {
+  font-size: 14px;
+}
+body[data-text-size='large'] .day-task-list .task-copy strong {
+  font-size: 18px;
+}
+.day-task-toggle {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: -5px 0 0 -8px;
+  cursor: pointer;
+}
+.day-task-toggle .task-check {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+}
+.day-task-toggle .task-check:checked:after {
+  line-height: 22px;
+  font-size: 18px;
+}
+.day-task-list .task-skip {
+  min-height: 44px;
+  min-width: 44px;
+  margin-top: -8px;
+}
+.day-view .day-meals {
+  flex: none;
+  margin: 0;
+  padding: 18px;
+  border-style: solid;
+  border-radius: 16px;
+}
+.day-view .day-meals-label {
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.day-view .day-meal {
+  display: grid;
+  gap: 6px;
+  min-height: 60px;
+  padding: 10px 4px;
+  font-size: 16px;
+}
+.day-view .day-meal small {
+  font-size: 11px;
+}
+.day-view .day-meal span {
+  white-space: normal;
+}
+@media (min-width: 901px) and (max-height: 850px) {
+  .week-grid.day-view .day-column {
+    grid-template-rows: minmax(0, 1fr);
+    gap: 16px 24px;
+    padding: 18px;
+  }
+  .week-grid.day-view .day-column:has(.day-meals) {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  .day-plan-side {
+    display: contents;
+  }
+  .day-agenda {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .day-task-panel {
+    grid-column: 2;
+    grid-row: 1;
+    padding: 12px;
+  }
+  .day-view .day-meal {
+    min-height: 44px;
+    padding: 4px;
+    font-size: 14px;
+  }
+  .day-view .day-meals {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-column: 1 / -1;
+    grid-row: 2;
+    gap: 4px 16px;
+    padding: 12px 16px;
+  }
+  .day-view .day-meals-label {
+    grid-column: 1 / -1;
+    margin-bottom: 0;
+  }
+  .day-plan-heading h2 {
+    font-size: 24px;
+  }
+}
+@media (max-width: 900px) {
+  .week-grid.day-view {
+    height: max-content;
+  }
+  .week-grid.day-view .day-column {
+    display: block;
+    height: auto;
+    padding: 18px;
+    overflow: visible;
+  }
+  .day-agenda {
+    margin-bottom: 24px;
+  }
+  .day-event-list,
+  .day-task-list {
+    overflow: visible;
+  }
+  .day-task-panel {
+    flex: none;
+  }
+  .day-plan-heading h2 {
+    font-size: 24px;
+  }
+}
