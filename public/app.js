@@ -1005,7 +1005,7 @@ function render() {
     $('#profile-filters').innerHTML = state.data.profiles
       .map(
         (person) =>
-          `<button class="filter ${state.hiddenProfiles.has(person.id) ? '' : 'selected'}" data-profile="${person.id}" aria-pressed="${!state.hiddenProfiles.has(person.id)}"><span class="filter-dot" style="background:${person.color}"></span>${escapeHtml(person.name)}</button>`,
+          `<button class="filter ${state.hiddenProfiles.has(person.id) ? '' : 'selected'}" data-profile="${person.id}" aria-pressed="${!state.hiddenProfiles.has(person.id)}" style="--person-color:${escapeHtml(person.color)}"><span class="filter-dot"></span>${escapeHtml(person.name)}</button>`,
       )
       .join('');
     const today = dateKey(new Date());

@@ -689,11 +689,18 @@ h2 {
 .filter:not(.selected) {
   opacity: 0.48;
 }
+.filter.selected {
+  border-color: color-mix(in srgb, var(--person-color) 65%, var(--line));
+  background: color-mix(in srgb, var(--person-color) 18%, var(--surface));
+}
+.filter-dot {
+  background: var(--person-color);
+}
 .filter-dot,
 .event-dot {
   display: inline-block;
-  width: 8px;
-  height: 8px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   flex: none;
 }
@@ -1538,9 +1545,9 @@ h2 {
   display: block;
   width: 100%;
   text-align: left;
-  background: color-mix(in srgb, var(--event-color) 13%, var(--surface));
+  background: color-mix(in srgb, var(--event-color) 25%, var(--surface));
   border: 0;
-  border-left: 3px solid var(--event-color);
+  border-left: 5px solid var(--event-color);
   border-radius: 6px 9px 9px 6px;
   padding: 9px 7px;
   margin: 7px 0;
@@ -1554,11 +1561,11 @@ h2 {
   text-overflow: ellipsis;
 }
 .day-event strong {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.25;
 }
 .day-event span {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--muted);
   margin-top: 5px;
 }
@@ -2961,8 +2968,8 @@ body[data-layout='portrait'] .sidebar {
   gap: 2px;
 }
 .month-dots i {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 .month-event-preview {
@@ -2972,17 +2979,43 @@ body[data-layout='portrait'] .sidebar {
   .month-event-preview {
     display: grid;
     gap: 4px;
-    margin-top: 8px;
+    margin-top: 4px;
   }
   .month-event-preview span {
     overflow: hidden;
     padding: 4px 6px;
-    border-left: 2px solid var(--event-color);
+    border-left: 4px solid var(--event-color);
     border-radius: 3px;
-    background: color-mix(in srgb, var(--event-color) 12%, var(--surface));
-    font-size: 10px;
+    background: color-mix(in srgb, var(--event-color) 25%, var(--surface));
+    font-size: 11px;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+}
+@media (min-width: 700px) and (min-height: 700px) and (max-height: 899px) {
+  .month-event-preview span {
+    display: none;
+  }
+  .month-event-preview span:first-child {
+    display: block;
+    padding: 1px 4px;
+    font-size: 10px;
+    line-height: 13px;
+  }
+}
+@media (min-width: 1400px) and (min-height: 900px) {
+  .day-event {
+    min-height: 76px;
+    padding: 12px 11px;
+  }
+  .day-event strong {
+    font-size: 17px;
+  }
+  .day-event span {
+    font-size: 13px;
+  }
+  .day-name {
+    font-size: 12px;
   }
 }
 @media (max-height: 650px) {
