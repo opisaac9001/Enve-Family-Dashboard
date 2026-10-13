@@ -32,6 +32,8 @@ cp -a "$root/image/raspberry-pi/stage" "$build_dir/enve-stage"
 mkdir -p "$build_dir/enve-stage/01-enve/files/app"
 git -C "$root" archive HEAD | tar -x -C "$build_dir/enve-stage/01-enve/files/app"
 rm "$build_dir/pi-gen/stage2/EXPORT_IMAGE"
+rm "$build_dir/pi-gen/export-image/01-user-rename/00-packages"
+rm "$build_dir/pi-gen/export-image/01-user-rename/01-run.sh"
 cat > "$build_dir/pi-gen/config" <<EOF
 IMG_NAME='enve-family-raspberry-pi'
 PI_GEN_RELEASE='Enve Family'
