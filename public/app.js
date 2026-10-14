@@ -44,6 +44,14 @@ const dayFormat = new Intl.DateTimeFormat(undefined, {
   day: 'numeric',
 });
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
+const weekdayFormat = new Intl.DateTimeFormat(undefined, { weekday: 'short' });
+const monthFormat = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' });
+const shortDateFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
+const zonedTimeFormat = new Intl.DateTimeFormat(undefined, {
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZoneName: 'short',
+});
 let unlockPromise = null;
 let changeStream = null;
 let celebrationTimeout = null;
@@ -654,7 +662,7 @@ function savedTime(time) {
   const date = new Date(time);
   return dateKey(date) === dateKey(new Date())
     ? timeFormat.format(date)
-    : `${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${timeFormat.format(date)}`;
+    : `${shortDateFormat.format(date)} ${timeFormat.format(date)}`;
 }
 
 function renderConnection() {
@@ -836,7 +844,7 @@ async function loadWeather() {
       .slice(0, 4)
       .map(
         (day) =>
-          `<div><span>${new Date(`${day.date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short' })}</span><strong>${Math.round(day.high)}°</strong><small>${Math.round(day.low)}°</small></div>`,
+          `<div><span>${weekdayFormat.format(new Date(`${day.date}T12:00:00`))}</span><strong>${Math.round(day.high)}°</strong><small>${Math.round(day.low)}°</small></div>`,
       )
       .join('')}</div>`;
     card.hidden = false;
@@ -1003,13 +1011,7 @@ function renderTimelineEntry(entry) {
     const startDate = new Date(event.start);
     const endDate = new Date(event.end);
     const formatter =
-      startDate.getTimezoneOffset() === endDate.getTimezoneOffset()
-        ? timeFormat
-        : new Intl.DateTimeFormat(undefined, {
-            hour: 'numeric',
-            minute: '2-digit',
-            timeZoneName: 'short',
-          });
+      startDate.getTimezoneOffset() === endDate.getTimezoneOffset() ? timeFormat : zonedTimeFormat;
     const time = `${formatter.format(startDate)} – ${formatter.format(endDate)}`;
     return `<button type="button" class="timeline-item timeline-event${compact}" style="${position};--event-color:${eventColor(event)}" data-event="${escapeHtml(event.id)}" title="${escapeHtml(`${event.title} · ${time}`)}"><strong>${escapeHtml(event.title)}</strong><span>${time} · ${escapeHtml(profile(event.profileId)?.name || '')}</span></button>`;
   }
@@ -1053,7 +1055,7 @@ function renderWeekTimeline(from) {
   const headers = days
     .map((day, index) => {
       const key = dateKey(day);
-      return `<button type="button" class="day-header ${key === today ? 'today' : ''}" data-day="${key}" aria-label="Show ${escapeHtml(dayFormat.format(day))}, ${dayEvents[index].length} events"><span class="day-name">${new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(day)}</span><span class="day-number">${day.getDate()}</span></button>`;
+      return `<button type="button" class="day-header ${key === today ? 'today' : ''}" data-day="${key}" aria-label="Show ${escapeHtml(dayFormat.format(day))}, ${dayEvents[index].length} events"><span class="day-name">${weekdayFormat.format(day)}</span><span class="day-number">${day.getDate()}</span></button>`;
     })
     .join('');
   const allDay = dayEvents.map((events) => events.filter((event) => event.allDay));
@@ -1387,9 +1389,7 @@ function render() {
               ? 'Make a draft'
               : state.view === 'day'
                 ? dayFormat.format(state.cursor)
-                : new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(
-                    state.cursor,
-                  );
+                : monthFormat.format(state.cursor);
   $('#date-subtitle').textContent =
     state.section === 'tasks'
       ? 'One place for chores, routines, and habits'
@@ -1525,7 +1525,7 @@ function render() {
                 : '';
               content = `<section class="day-agenda" aria-label="Daily schedule"><div class="day-plan-heading"><h2>Schedule</h2><span>${events.length} ${events.length === 1 ? 'event' : 'events'}</span></div>${allDayContent}<div class="day-event-list"><div class="timeline" style="--timeline-days:1;--hour-height:${timelineHourHeight}px">${renderTimeline([day])}</div></div></section><aside class="day-plan-side"><section class="day-task-panel" aria-label="Tasks for ${escapeHtml(dayFormat.format(day))}"><div class="day-plan-heading"><h2>To do</h2><button type="button" class="secondary-button" data-add-day-task="${key}">＋ Add task</button></div><div class="day-task-summary"><span>${openTasks ? `${openTasks} to do` : 'All caught up'}</span><button type="button" class="text-button" data-section="tasks">All tasks →</button></div><div class="day-task-list">${dailyTasks.length ? dailyTasks.map((task) => renderTaskRow(task, 'day')).join('') : '<p class="empty-copy">No tasks for this day.</p>'}</div></section>${mealContent}</aside>`;
             }
-            return `<div class="day-column ${key === today ? 'today' : ''} ${day.getMonth() !== state.cursor.getMonth() && state.view === 'month' ? 'outside-month' : ''}" data-day-column="${key}"><button type="button" class="day-header" data-day="${key}" aria-label="Show ${escapeHtml(dayFormat.format(day))}, ${events.length} events"><span class="day-name">${new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(day)}</span><span class="day-number">${day.getDate()}</span></button>${content}</div>`;
+            return `<div class="day-column ${key === today ? 'today' : ''} ${day.getMonth() !== state.cursor.getMonth() && state.view === 'month' ? 'outside-month' : ''}" data-day-column="${key}"><button type="button" class="day-header" data-day="${key}" aria-label="Show ${escapeHtml(dayFormat.format(day))}, ${events.length} events"><span class="day-name">${weekdayFormat.format(day)}</span><span class="day-number">${day.getDate()}</span></button>${content}</div>`;
           }).join('');
     if (timelineKey) {
       updateNowLine();
@@ -1624,7 +1624,7 @@ function calendarMeals(meals, key) {
 
 function repeatLabel(meal) {
   if (!meal.repeatRule || meal.repeatRule === 'none') return '';
-  return `Repeats ${meal.repeatRule}${meal.repeatUntil ? ` through ${new Date(`${meal.repeatUntil}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : ''}`;
+  return `Repeats ${meal.repeatRule}${meal.repeatUntil ? ` through ${shortDateFormat.format(new Date(`${meal.repeatUntil}T12:00:00`))}` : ''}`;
 }
 
 function renderTodayMeals() {
