@@ -2499,6 +2499,18 @@ $('#today-button').addEventListener('click', () => {
 });
 $('#previous-week').addEventListener('click', () => moveCursor(-1));
 $('#next-week').addEventListener('click', () => moveCursor(1));
+document.addEventListener(
+  'pointerdown',
+  (event) => {
+    const path = event.composedPath();
+    const keyboardTap = path.some((element) => element.classList?.contains('enve-keyboard'));
+    document.querySelectorAll('.menu-disclosure[open]').forEach((menu) => {
+      if (path.includes(menu) || (keyboardTap && menu.contains(document.activeElement))) return;
+      menu.open = false;
+    });
+  },
+  { capture: true },
+);
 $('#app').addEventListener('click', (event) => {
   const button = event.target.closest('button[data-section]');
   if (button) {
