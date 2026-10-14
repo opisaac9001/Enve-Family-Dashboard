@@ -24,6 +24,27 @@ assert.equal(displayed[0].end, event.end);
 assert.equal(displayed[0].writable, true);
 assert.equal(parseICloudObject(object, calendar, '2026-10-06', '2026-10-11').length, 0);
 const revised = updatedICloudObject(created.data, { ...event, title: 'Family brunch' });
+const detailed = newICloudObject({ ...event, notes: 'Family instructions '.repeat(250) });
+const movedOnly = updatedICloudObject(
+  detailed.data,
+  {
+    ...event,
+    title: 'Stale title',
+    notes: 'Truncated notes',
+    start: '2026-10-07',
+    end: '2026-10-08',
+  },
+  { moveOnly: true },
+);
+const movedEvent = parseICloudObject(
+  { ...object, data: movedOnly },
+  calendar,
+  '2026-10-04',
+  '2026-10-11',
+)[0];
+assert.equal(movedEvent.title, event.title);
+assert.equal(movedEvent.notes, 'Family instructions '.repeat(250));
+assert.equal(movedEvent.start, '2026-10-07');
 assert.equal(
   parseICloudObject({ ...object, data: revised }, calendar, '2026-10-04', '2026-10-11')[0].title,
   'Family brunch',

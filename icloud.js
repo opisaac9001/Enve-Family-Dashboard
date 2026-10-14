@@ -136,13 +136,15 @@ export function canEditICloudObject(data) {
   return !new ICAL.Event(parts[0]).attendees.length;
 }
 
-export function updatedICloudObject(data, event) {
+export function updatedICloudObject(data, event, { moveOnly = false } = {}) {
   if (!canEditICloudObject(data))
     throw new Error('Edit recurring events and invitations in Apple Calendar.');
   const component = new ICAL.Component(ICAL.parse(data));
   const item = new ICAL.Event(component.getFirstSubcomponent('vevent'));
-  item.summary = event.title;
-  item.description = event.notes;
+  if (!moveOnly) {
+    item.summary = event.title;
+    item.description = event.notes;
+  }
   item.startDate = event.allDay
     ? ICAL.Time.fromDateString(event.start)
     : ICAL.Time.fromJSDate(new Date(event.start), true);

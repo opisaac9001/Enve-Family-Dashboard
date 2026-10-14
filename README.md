@@ -18,7 +18,7 @@
   <a href="./LICENSE.md"><img src="https://img.shields.io/badge/license-AGPL--3.0--only-663399?style=for-the-badge" alt="AGPL-3.0-only license"></a>
 </p>
 
-A self-hosted, touch-friendly family calendar with day, week, month, and schedule views; repeating local events; timed reminders; rotating chores, routines, and habits; shared lists; recipe-based meal suggestions; rewards; weather; local photos; import drafts; backups; and an optional parent edit PIN. Google, iCloud, and Outlook Calendar connections are available. The Raspberry Pi Zero 2 W is the one-device target for the server and display, using either the complete WebKit interface or a lighter native interface; physical performance testing is still required. The Mac and Unraid remain server options.
+A self-hosted, touch-friendly family calendar with day, week, and month views; repeating local events; timed reminders; rotating chores, routines, and habits; shared lists; recipe-based meal suggestions; rewards; weather; local photos; import drafts; backups; and an optional parent edit PIN. Google, iCloud, and Outlook Calendar connections are available. The Raspberry Pi Zero 2 W is the one-device target for the server and display, using either the complete WebKit interface or a lighter native interface; physical performance testing is still required. The Mac and Unraid remain server options.
 
 ## Screenshots
 
@@ -130,3 +130,9 @@ curl -H "Authorization: Bearer $ENVE_FAMILY_KEY" http://127.0.0.1:4317/api/integ
 ```
 
 Keep keys out of URLs and logs. The Pi's plain HTTP LAN address does not encrypt requests; use a private encrypted tunnel or HTTPS proxy for access outside the Pi. Do not expose port 4317 directly to the public internet. An MCP adapter can use these routes for ChatGPT or other AI tools without changing Enve's database.
+
+## Moving calendar items
+
+Hold a writable event still for one second, then drag it. Week view moves it to another day or time; Day view changes its time; Month view changes its date while keeping its time. Timed drops snap to 15-minute intervals and preserve the event’s duration. A preview shows the destination before you release. Slide immediately to scroll instead, or press Escape to cancel an active drag.
+
+Unfinished timed tasks can also move within Day and Week without completing them or awarding stars. Repeating local events offer a choice between moving one date and the series when their saved time zone matches the display. Read-only calendars and recurring iCloud events or invitations cannot be moved here. An edit PIN, when enabled, protects saved moves. Meals continue to use their meal-plan editor. Connected-calendar moves need an online server; live provider saves and physical touchscreen dragging should be checked with the household’s own setup.

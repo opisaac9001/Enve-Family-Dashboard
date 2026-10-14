@@ -52,6 +52,8 @@ let loadPromise = null;
 let reloadPending = false;
 let renderedState = '';
 let displayTimeout = null;
+let calendarDrag = null;
+let dragReloadPending = false;
 const pendingRequests = new Set();
 const snapshotKey = 'enve-offline-state';
 const outboxKey = 'enve-outbox';
@@ -746,6 +748,10 @@ function chooseSeriesScope(action, noun = 'event') {
 }
 
 function load() {
+  if (calendarDrag) {
+    dragReloadPending = true;
+    return Promise.resolve();
+  }
   reloadPending = true;
   if (!loadPromise) {
     loadPromise = (async () => {
@@ -770,6 +776,10 @@ async function loadState() {
     const data = await api(`/api/state?from=${dateKey(from)}&to=${dateKey(to)}`);
     if (context !== JSON.stringify([state.section, state.view, dateKey(state.cursor)])) {
       reloadPending = true;
+      return;
+    }
+    if (calendarDrag) {
+      dragReloadPending = true;
       return;
     }
     const content = JSON.stringify([context, data]);
@@ -1008,7 +1018,7 @@ function renderTimelineEntry(entry) {
   const time = timeFormat.format(new Date(`${task.dueDate}T${task.dueTime}`));
   const claim = task.claimable && !task.claimedBy && !task.completed;
   const copy = `<span class="timeline-task-copy"><strong>${escapeHtml(task.title)}</strong><span>${time} · ${escapeHtml(person?.name || 'Anyone')}${task.starValue ? ` · ★ ${task.starValue}` : ''}${task.skipped ? ' · skipped' : ''}</span></span>`;
-  const attributes = `class="timeline-item timeline-task${compact}${task.completed ? ' completed' : ''}" style="${position};--event-color:${person?.color || '#F5921A'}" title="${escapeHtml(task.title)}"`;
+  const attributes = `class="timeline-item timeline-task${compact}${task.completed ? ' completed' : ''}" data-drag-task="${task.id}" style="${position};--event-color:${person?.color || '#F5921A'}" title="${escapeHtml(task.title)}"`;
   return claim
     ? `<div ${attributes}><span class="claim-dot" aria-label="Unclaimed">☆</span>${copy}</div>`
     : `<label ${attributes}><input class="task-check" type="checkbox" data-task="${task.id}" aria-label="Complete ${escapeHtml(task.title)}" ${task.completed ? 'checked' : ''}>${copy}</label>`;
@@ -1050,8 +1060,8 @@ function renderWeekTimeline(from) {
   const allDayRow = allDay.some((events) => events.length)
     ? `<span class="timeline-allday-label">All day</span>${allDay
         .map(
-          (events) =>
-            `<div class="timeline-allday">${events.map((event) => `<button type="button" class="timeline-allday-event" style="--event-color:${eventColor(event)}" data-event="${escapeHtml(event.id)}" title="${escapeHtml(event.title)}">${escapeHtml(event.title)}</button>`).join('')}</div>`,
+          (events, index) =>
+            `<div class="timeline-allday" data-allday-day="${dateKey(days[index])}">${events.map((event) => `<button type="button" class="timeline-allday-event" style="--event-color:${eventColor(event)}" data-event="${escapeHtml(event.id)}" title="${escapeHtml(event.title)}">${escapeHtml(event.title)}</button>`).join('')}</div>`,
         )
         .join('')}`
     : '';
@@ -1250,6 +1260,14 @@ function showEventDetail(item) {
   $('#detail-person').textContent =
     `${profile(item.profileId)?.name || ''}${item.calendarName ? ` · ${item.calendarName}` : ''}`;
   $('#detail-notes').textContent = item.notes || '';
+  if (!$('#detail-move-hint'))
+    $('#detail-notes').insertAdjacentHTML(
+      'afterend',
+      '<p id="detail-move-hint" class="muted"></p>',
+    );
+  $('#detail-move-hint').textContent =
+    moveBlockReason(item) ||
+    'Tip: press and hold an event on the calendar for a second, then drag it to a new day or time.';
   $('#delete-event').hidden = item.source !== 'local' && !item.writable;
   $('#edit-event').hidden = item.source !== 'local' && !item.writable;
   $('#event-dialog').showModal();
@@ -1336,6 +1354,10 @@ function renderTasksPage() {
 }
 
 function render() {
+  if (calendarDrag) {
+    dragReloadPending = true;
+    return;
+  }
   $('#settings-button').disabled = !state.data;
   const { from, days } = viewRange();
   const end = addDays(from, days - 1);
@@ -1463,7 +1485,7 @@ function render() {
                     .slice(0, 3)
                     .map(
                       (event) =>
-                        `<span style="--event-color:${eventColor(event)}">${escapeHtml(event.title)}</span>`,
+                        `<span style="--event-color:${eventColor(event)}" data-drag-event="${escapeHtml(event.id)}">${escapeHtml(event.title)}</span>`,
                     )
                     .join('')}</div>`
                 : events.length
@@ -2744,6 +2766,472 @@ $('#week-grid').addEventListener('click', (event) => {
   state.view = 'day';
   load();
 });
+
+const dragHoldMs = 1000;
+const dragSlop = 8;
+const dragSnapMinutes = 15;
+const dragEdge = 48;
+const dragDayFormat = new Intl.DateTimeFormat(undefined, {
+  weekday: 'short',
+  month: 'short',
+  day: 'numeric',
+});
+let suppressClickUntil = 0;
+
+function moveBlockReason(item) {
+  if (item.source === 'task') return item.completed ? 'Finished tasks cannot be moved.' : null;
+  if (item.source === 'local' || item.writable) return null;
+  if (item.source === 'icloud')
+    return 'Repeating iCloud events and invitations can only be moved in Apple Calendar.';
+  if (item.source === 'google') return 'This Google calendar is read-only.';
+  if (item.source === 'outlook') return 'Outlook events are read-only here.';
+  return 'Events from calendar links are read-only.';
+}
+
+function dayDiff(from, to) {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86400000);
+}
+
+function shiftDay(key, days) {
+  return dateKey(addDays(new Date(`${key}T12:00:00`), days));
+}
+
+function shiftClock(date, days) {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate() + days,
+    date.getHours(),
+    date.getMinutes(),
+    date.getSeconds(),
+  );
+}
+
+function dragMinute(column, y) {
+  const minute =
+    (y - column.getBoundingClientRect().top) / (timelineHourHeight / 60) - calendarDrag.offset;
+  const snapped = Math.round(minute / dragSnapMinutes) * dragSnapMinutes;
+  return Math.min(Math.max(snapped, 0), 1440 - dragSnapMinutes);
+}
+
+function movedTimes(item, grabDay, day, minute) {
+  if (item.allDay) {
+    const shift = dayDiff(grabDay, day);
+    return { start: shiftDay(item.start, shift), end: shiftDay(item.end, shift) };
+  }
+  const start = new Date(item.start);
+  const end = new Date(item.end);
+  if (minute == null) {
+    const shift = dayDiff(grabDay, day);
+    const next = shiftClock(start, shift);
+    return { start: next, end: new Date(next.getTime() + (end - start)) };
+  }
+  const [year, month, date] = day.split('-').map(Number);
+  const next = new Date(year, month - 1, date, 0, minute);
+  return { start: next, end: new Date(next.getTime() + (end - start)) };
+}
+
+function movedLabel(item, times, format = dayFormat) {
+  if (item.allDay) {
+    const last = shiftDay(times.end, -1);
+    const label = (key) => format.format(new Date(`${key}T12:00:00`));
+    return last === times.start ? label(times.start) : `${label(times.start)} – ${label(last)}`;
+  }
+  return `${format.format(times.start)} · ${timeFormat.format(times.start)} – ${timeFormat.format(times.end)}`;
+}
+
+function dragTarget(x, y) {
+  const hit = document.elementFromPoint(x, y);
+  const column = hit?.closest('#week-grid [data-timeline-day]');
+  if (column) return { element: column, day: column.dataset.timelineDay, column };
+  const selector =
+    state.view === 'month'
+      ? '#week-grid [data-day-column]'
+      : state.view === 'week'
+        ? '#week-grid [data-allday-day], #week-grid .timeline-head [data-day]'
+        : null;
+  const cell = selector && hit?.closest(selector);
+  return cell
+    ? { element: cell, day: cell.dataset.dayColumn || cell.dataset.alldayDay || cell.dataset.day }
+    : null;
+}
+
+function updateCalendarDrag() {
+  state.idleAt = performance.now();
+  const drag = calendarDrag;
+  const { item } = drag;
+  const target = dragTarget(drag.x, drag.y);
+  const minute = target?.column && !item.allDay ? dragMinute(target.column, drag.y) : null;
+  const times = target && movedTimes(item, drag.grabDay, target.day, minute);
+  const changed =
+    times &&
+    (item.allDay ? times.start !== item.start : times.start.getTime() !== Date.parse(item.start));
+  drag.times = changed ? times : null;
+  const highlighted = minute == null ? target?.element : null;
+  if (drag.highlighted !== highlighted) {
+    drag.highlighted?.classList.remove('drag-target');
+    highlighted?.classList.add('drag-target');
+    drag.highlighted = highlighted;
+  }
+  if (minute == null) drag.slot.remove();
+  else {
+    if (drag.slot.parentElement !== target.column) target.column.append(drag.slot);
+    const minutes = Math.min((times.end - times.start) / 60000, 1440 - minute);
+    drag.slot.style.top = `${(minute * timelineHourHeight) / 60}px`;
+    drag.slot.style.height = `${Math.max((minutes * timelineHourHeight) / 60, 16)}px`;
+  }
+  const hint = !target
+    ? 'Drag to a day or time'
+    : changed
+      ? movedLabel(item, times, dragDayFormat)
+      : 'Release to leave it here';
+  if (drag.hint.textContent !== hint) drag.hint.textContent = hint;
+  drag.ghost.style.transform = `translate(${drag.x}px, ${drag.y}px) translate(-50%, ${drag.y < 96 ? '28px' : 'calc(-100% - 28px)'})`;
+}
+
+function dragScroller() {
+  return [timelineScroller(), $('.calendar-panel')].find(
+    (element) =>
+      element &&
+      (element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth),
+  );
+}
+
+function scheduleDragScroll() {
+  const drag = calendarDrag;
+  if (drag.frame) return;
+  drag.frame = requestAnimationFrame(() => {
+    drag.frame = 0;
+    if (calendarDrag !== drag) return;
+    const scroller = dragScroller();
+    if (!scroller) return;
+    const rect = scroller.getBoundingClientRect();
+    const head = state.view === 'week' ? $('#week-grid .timeline-head')?.offsetHeight || 0 : 0;
+    const gutter = state.view === 'week' ? $('#week-grid .timeline-hours')?.offsetWidth || 0 : 0;
+    const speed = (distance) => (distance < dragEdge ? Math.ceil((dragEdge - distance) / 4) : 0);
+    const dy = speed(rect.bottom - drag.y) - speed(drag.y - rect.top - head);
+    const dx =
+      state.view === 'week' ? speed(rect.right - drag.x) - speed(drag.x - rect.left - gutter) : 0;
+    if (!dx && !dy) return;
+    const { scrollTop, scrollLeft } = scroller;
+    scroller.scrollTop += dy;
+    scroller.scrollLeft += dx;
+    if (scroller.scrollTop === scrollTop && scroller.scrollLeft === scrollLeft) return;
+    updateCalendarDrag();
+    scheduleDragScroll();
+  });
+}
+
+function beginCalendarPress(target, x, y, pointer) {
+  if (calendarDrag || state.section !== 'calendar' || !state.data) return;
+  const element = target.closest('[data-event], [data-drag-event], .timeline-task');
+  if (!element || !$('#week-grid').contains(element)) return;
+  calendarDrag = {
+    element,
+    pointer,
+    startX: x,
+    startY: y,
+    x,
+    y,
+    active: false,
+    timer: setTimeout(activateCalendarDrag, dragHoldMs),
+  };
+}
+
+function activateCalendarDrag() {
+  const drag = calendarDrag;
+  const { element } = drag;
+  drag.timer = null;
+  drag.active = true;
+  let item = state.data.events.find(
+    (row) => row.id === (element.dataset.event || element.dataset.dragEvent),
+  );
+  if (!item && element.classList.contains('timeline-task')) {
+    const task = state.data.tasks.find((row) => row.id === element.dataset.dragTask);
+    if (task) {
+      const start = new Date(`${task.dueDate}T${task.dueTime}`);
+      item = {
+        ...task,
+        source: 'task',
+        allDay: false,
+        start: start.toISOString(),
+        end: new Date(start.getTime() + 30 * 60000).toISOString(),
+      };
+    }
+  }
+  const refusal = !item
+    ? 'This item cannot be moved.'
+    : moveBlockReason(item) ||
+      (state.offline
+        ? 'Moving events needs the Enve Family server. Try again when it’s back.'
+        : '');
+  if (refusal) {
+    drag.refused = true;
+    element.classList.add('drag-refused');
+    setTimeout(() => element.classList.remove('drag-refused'), 400);
+    showToast(refusal);
+    return;
+  }
+  drag.item = item;
+  drag.grabDay =
+    element.closest('[data-timeline-day]')?.dataset.timelineDay ||
+    element.closest('[data-allday-day]')?.dataset.alldayDay ||
+    element.closest('[data-day-column]').dataset.dayColumn;
+  const column = element.closest('[data-timeline-day]');
+  drag.offset =
+    column && !item.allDay
+      ? (drag.startY - column.getBoundingClientRect().top) / (timelineHourHeight / 60) -
+        (Date.parse(item.start) - new Date(`${drag.grabDay}T00:00:00`).getTime()) / 60000
+      : 0;
+  drag.ghost = document.createElement('div');
+  drag.ghost.className = 'calendar-drag-ghost';
+  drag.ghost.style.setProperty('--event-color', eventColor(item));
+  drag.ghost.setAttribute('role', 'status');
+  drag.ghost.innerHTML = `<strong>${escapeHtml(item.title)}</strong><span></span>`;
+  drag.hint = drag.ghost.querySelector('span');
+  drag.slot = document.createElement('div');
+  drag.slot.className = 'drag-slot';
+  document.body.append(drag.ghost);
+  element.classList.add('drag-source');
+  $('#week-grid').classList.add('dragging');
+  if (typeof drag.pointer === 'number') {
+    try {
+      $('#week-grid').setPointerCapture(drag.pointer);
+    } catch {}
+  }
+  navigator.vibrate?.(20);
+  updateCalendarDrag();
+}
+
+function clearCalendarDrag() {
+  const drag = calendarDrag;
+  clearTimeout(drag.timer);
+  cancelAnimationFrame(drag.frame);
+  drag.ghost?.remove();
+  drag.slot?.remove();
+  drag.highlighted?.classList.remove('drag-target');
+  drag.element.classList.remove('drag-source');
+  $('#week-grid').classList.remove('dragging');
+  if (typeof drag.pointer === 'number' && $('#week-grid').hasPointerCapture?.(drag.pointer))
+    $('#week-grid').releasePointerCapture(drag.pointer);
+  if (drag.active) suppressClickUntil = performance.now() + 600;
+  calendarDrag = null;
+  if (dragReloadPending) {
+    dragReloadPending = false;
+    load();
+  }
+  return drag;
+}
+
+function moveCalendarPress(x, y) {
+  const drag = calendarDrag;
+  drag.x = x;
+  drag.y = y;
+  if (!drag.active) {
+    if (Math.hypot(x - drag.startX, y - drag.startY) > dragSlop) clearCalendarDrag();
+    return;
+  }
+  if (drag.refused) return;
+  updateCalendarDrag();
+  scheduleDragScroll();
+}
+
+function endCalendarPress(x, y) {
+  const drag = calendarDrag;
+  if (drag.active && !drag.refused) {
+    drag.x = x;
+    drag.y = y;
+    updateCalendarDrag();
+  }
+  clearCalendarDrag();
+  if (drag.times) moveCalendarEvent(drag.item, drag.times);
+}
+
+function cancelCalendarPress(message) {
+  if (clearCalendarDrag().item && message) showToast(message);
+}
+
+function movedSeriesTimes(item, times) {
+  if (item.allDay) {
+    const shift = dayDiff(item.start, times.start);
+    return { start: shiftDay(item.seriesStart, shift), end: shiftDay(item.seriesEnd, shift) };
+  }
+  const from = new Date(item.start);
+  const minutes =
+    times.start.getHours() * 60 +
+    times.start.getMinutes() -
+    (from.getHours() * 60 + from.getMinutes());
+  const base = new Date(item.seriesStart);
+  const start = new Date(
+    base.getFullYear(),
+    base.getMonth(),
+    base.getDate() + dayDiff(dateKey(from), dateKey(times.start)),
+    base.getHours(),
+    base.getMinutes() + minutes,
+  );
+  return { start, end: new Date(start.getTime() + (Date.parse(item.seriesEnd) - base.getTime())) };
+}
+
+async function moveCalendarEvent(item, times) {
+  const repeating = item.source === 'local' && item.seriesId;
+  // An occurrence edited to or from all-day can't be shifted onto the series' own schedule.
+  const seriesMovable =
+    repeating &&
+    (item.seriesStart.length === 10) === item.allDay &&
+    (item.allDay || item.timeZone === Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const scope = !repeating
+    ? 'single'
+    : seriesMovable
+      ? await chooseSeriesScope('Move')
+      : 'occurrence';
+  if (!scope) return;
+  const series = scope === 'series';
+  const saved = series ? movedSeriesTimes(item, times) : times;
+  const note = series
+    ? ' Every date in the series moves by the same amount, and dates changed on their own go back to the series schedule.'
+    : repeating
+      ? ' Only this date changes. The rest of the series stays as it is.'
+      : '';
+  if (
+    series &&
+    !(await askToDelete(
+      'Move event?',
+      `${item.title} will move to ${movedLabel(item, times)}.${note}`,
+      'Move',
+    ))
+  )
+    return;
+  if (item.source === 'task') {
+    try {
+      await api(`/api/tasks/${encodeURIComponent(item.id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          dueDate: dateKey(times.start),
+          dueTime: `${String(times.start.getHours()).padStart(2, '0')}:${String(times.start.getMinutes()).padStart(2, '0')}`,
+        }),
+      });
+      showToast(`Moved ${item.title}`);
+      await load();
+    } catch (error) {
+      showError(error.message);
+    }
+    return;
+  }
+  const payload = {
+    title: item.title,
+    moveOnly: true,
+    profileId: item.profileId,
+    notes: item.notes || '',
+    allDay: item.allDay,
+    calendarId: item.calendarId,
+    objectUrl: item.objectUrl,
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    repeatRule: series ? item.repeatRule : 'none',
+    repeatUntil: series ? item.repeatUntil : null,
+    ...(item.allDay
+      ? { start: saved.start, end: saved.end }
+      : {
+          start: saved.start.toISOString(),
+          end: saved.end.toISOString(),
+          localStart: importDateValue(saved.start, false),
+          localEnd: importDateValue(saved.end, false),
+        }),
+  };
+  const endpoint =
+    item.source === 'local'
+      ? `/api/events/${encodeURIComponent(item.seriesId || item.id)}${scope === 'occurrence' ? `?occurrence=${item.occurrenceDate}` : ''}`
+      : item.source === 'google'
+        ? `/api/google/events/${encodeURIComponent(item.calendarId)}/${encodeURIComponent(item.googleEventId)}`
+        : '/api/icloud/events';
+  try {
+    await api(endpoint, { method: 'PATCH', body: JSON.stringify(payload) });
+    showToast(`Moved ${item.title}`);
+    await load();
+  } catch (error) {
+    showError(error.message);
+  }
+}
+
+function dragTouch(event) {
+  return [...event.changedTouches].find((touch) => touch.identifier === calendarDrag?.pointer);
+}
+
+if (window.PointerEvent) {
+  $('#week-grid').addEventListener('pointerdown', (event) => {
+    if (event.isPrimary && event.button === 0)
+      beginCalendarPress(event.target, event.clientX, event.clientY, event.pointerId);
+  });
+  window.addEventListener('pointermove', (event) => {
+    if (calendarDrag?.pointer === event.pointerId) moveCalendarPress(event.clientX, event.clientY);
+  });
+  window.addEventListener('pointerup', (event) => {
+    if (calendarDrag?.pointer === event.pointerId) endCalendarPress(event.clientX, event.clientY);
+  });
+  window.addEventListener('pointercancel', (event) => {
+    if (calendarDrag?.pointer === event.pointerId) cancelCalendarPress('Move canceled');
+  });
+} else {
+  $('#week-grid').addEventListener(
+    'touchstart',
+    (event) => {
+      if (calendarDrag) cancelCalendarPress('Move canceled');
+      else if (event.touches.length === 1) {
+        const touch = event.touches[0];
+        beginCalendarPress(event.target, touch.clientX, touch.clientY, touch.identifier);
+      }
+    },
+    { passive: true },
+  );
+  $('#week-grid').addEventListener('mousedown', (event) => {
+    if (event.button === 0) beginCalendarPress(event.target, event.clientX, event.clientY, 'mouse');
+  });
+  window.addEventListener('mousemove', (event) => {
+    if (calendarDrag?.pointer === 'mouse') moveCalendarPress(event.clientX, event.clientY);
+  });
+  window.addEventListener('mouseup', (event) => {
+    if (calendarDrag?.pointer === 'mouse') endCalendarPress(event.clientX, event.clientY);
+  });
+  $('#week-grid').addEventListener('touchend', (event) => {
+    const touch = dragTouch(event);
+    if (touch) endCalendarPress(touch.clientX, touch.clientY);
+  });
+  $('#week-grid').addEventListener('touchcancel', (event) => {
+    if (dragTouch(event)) cancelCalendarPress('Move canceled');
+  });
+}
+// Scrolling can only be blocked from touchmove; pointer listeners can't stop a pan once it starts.
+$('#week-grid').addEventListener(
+  'touchmove',
+  (event) => {
+    if (!calendarDrag) return;
+    if (calendarDrag.active && !calendarDrag.refused && event.cancelable) event.preventDefault();
+    const touch = !window.PointerEvent && dragTouch(event);
+    if (touch) moveCalendarPress(touch.clientX, touch.clientY);
+  },
+  { passive: false },
+);
+$('#week-grid').addEventListener('contextmenu', (event) => {
+  if (calendarDrag) event.preventDefault();
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && calendarDrag?.active) {
+    event.preventDefault();
+    cancelCalendarPress('Move canceled');
+  }
+});
+window.addEventListener('blur', () => {
+  if (calendarDrag) cancelCalendarPress('Move canceled');
+});
+window.addEventListener(
+  'click',
+  (event) => {
+    if (performance.now() >= suppressClickUntil) return;
+    suppressClickUntil = 0;
+    event.preventDefault();
+    event.stopPropagation();
+  },
+  { capture: true },
+);
 $('#edit-event').addEventListener('click', async () => {
   const item = state.selectedEvent;
   if (!item) return;

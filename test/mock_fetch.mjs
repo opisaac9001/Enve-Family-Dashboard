@@ -8,6 +8,11 @@ globalThis.fetch = async (input, options = {}) => {
     process.env.MOCK_FETCH_LOG,
     `${method} ${url.origin}${url.pathname}${search ? ` q=${search}` : ''}\n`,
   );
+  if (url.origin === 'https://www.googleapis.com' && method === 'PATCH')
+    appendFileSync(
+      process.env.MOCK_FETCH_LOG,
+      `GOOGLE_PATCH_KEYS ${Object.keys(JSON.parse(options.body)).sort().join(',')}\n`,
+    );
   const ok = (data) =>
     new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } });
 

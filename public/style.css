@@ -3774,3 +3774,102 @@ body[data-text-size='large'] .day-view .timeline-event strong,
 body[data-text-size='large'] .day-view .timeline-task-copy strong {
   font-size: 18px;
 }
+#week-grid [data-event],
+#week-grid [data-drag-event],
+#week-grid .timeline-task {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.week-grid.dragging,
+.week-grid.dragging * {
+  cursor: grabbing;
+}
+.drag-source {
+  opacity: 0.4;
+}
+.drag-target {
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+}
+.drag-slot {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  z-index: 3;
+  border: 2px dashed var(--accent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  pointer-events: none;
+}
+.calendar-drag-ghost {
+  position: fixed;
+  z-index: 40;
+  top: 0;
+  left: 0;
+  display: grid;
+  gap: 2px;
+  max-width: min(72vw, 300px);
+  padding: 8px 12px;
+  border: 1px solid var(--accent);
+  border-left: 5px solid var(--event-color);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  pointer-events: none;
+}
+.calendar-drag-ghost strong,
+.calendar-drag-ghost span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.calendar-drag-ghost strong {
+  font-size: 14px;
+}
+.calendar-drag-ghost span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.drag-refused {
+  animation: drag-refused 0.3s ease-in-out;
+}
+@keyframes drag-refused {
+  25% {
+    translate: -4px 0;
+  }
+  75% {
+    translate: 4px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drag-refused {
+    animation: none;
+  }
+}
+@media (max-height: 699px), (max-width: 680px) {
+  .month-event-preview {
+    display: block;
+    margin-top: 2px;
+  }
+  .month-event-preview span {
+    display: none;
+  }
+  .month-event-preview span:first-child {
+    display: block;
+    overflow: hidden;
+    border-left: 3px solid var(--event-color);
+    padding-left: 3px;
+    background: color-mix(in srgb, var(--event-color) 20%, var(--surface));
+    font-size: 10px;
+    line-height: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .month-view .day-column:nth-child(-n + 7) .day-header {
+    flex-direction: row;
+    gap: 2px;
+  }
+}

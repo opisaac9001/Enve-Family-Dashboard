@@ -3117,6 +3117,19 @@ const server = http.createServer(async (request, response) => {
       const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
       if (!task) return error(response, 404, 'Task not found.');
       const input = await body(request);
+      if (input.dueDate !== undefined || input.dueTime !== undefined) {
+        if (!integrationKey && pinHash() && !pinUnlocked(request))
+          return error(response, 423, 'Unlock edits first.');
+        if (task.completed) throw new Error('Only unfinished tasks can be rescheduled.');
+        if (Object.keys(input).some((key) => !['dueDate', 'dueTime'].includes(key)))
+          throw new Error('Save the new task time separately from other changes.');
+        const day = input.dueDate ?? task.due_date;
+        const time = input.dueTime === undefined ? task.due_time : input.dueTime;
+        if (!validDate(day) || (time !== null && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)))
+          throw new Error('Choose a valid task date and time.');
+        db.prepare('UPDATE tasks SET due_date = ?, due_time = ? WHERE id = ?').run(day, time, id);
+        return json(response, 200, { ok: true });
+      }
       if (input.claimProfileId !== undefined) {
         if (!task.claimable || task.completed || task.claimed_by)
           throw new Error('This chore cannot be claimed.');
@@ -3839,7 +3852,7 @@ const server = http.createServer(async (request, response) => {
         result = await client.updateCalendarObject({
           calendarObject: {
             ...object,
-            data: updatedICloudObject(object.data, event),
+            data: updatedICloudObject(object.data, event, { moveOnly: input.moveOnly === true }),
           },
         });
       }
@@ -3886,10 +3899,10 @@ const server = http.createServer(async (request, response) => {
           method: 'DELETE',
         });
       } else {
-        const event = localEvent(await body(request));
+        const input = await body(request);
+        const event = localEvent(input);
         const payload = {
-          summary: event.title,
-          description: event.notes,
+          ...(input.moveOnly === true ? {} : { summary: event.title, description: event.notes }),
           start: event.allDay ? { date: event.start } : { dateTime: event.start },
           end: event.allDay ? { date: event.end } : { dateTime: event.end },
         };

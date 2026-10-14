@@ -76,6 +76,25 @@ class DashboardServerCase(unittest.TestCase):
 
 class DashboardApiTest(DashboardServerCase):
 
+    def test_rescheduling_task_preserves_completion_rewards_and_repeat_state(self):
+        _, created = self.call('/api/tasks', 'POST', {
+            'title': 'Practice piano', 'profileId': 'alex', 'dueDate': '2026-10-13',
+            'dueTime': '16:00', 'repeatRule': 'daily', 'starValue': 3,
+        })
+        path = '/api/tasks/' + created['id']
+        state_path = '/api/state?from=2026-10-11&to=2026-10-18'
+        before = self.call(state_path)[1]['tasks']
+        self.assertEqual(self.call(path, 'PATCH', {'dueDate': '2026-10-14', 'dueTime': '17:15'})[0], 200)
+        after = self.call(state_path)[1]['tasks']
+        self.assertEqual(len(before), len(after))
+        task = next(row for row in after if row['id'] == created['id'])
+        self.assertEqual((task['dueDate'], task['dueTime'], task['completed'], task['repeatRule'],
+                          task['starValue']), ('2026-10-14', '17:15', 0, 'daily', 3))
+        self.assertEqual(self.call(path, 'PATCH', {'dueTime': '25:00'})[0], 400)
+        self.assertEqual(self.call(path, 'PATCH', {'dueDate': '2026-10-15', 'completed': True})[0], 400)
+        self.assertEqual(self.call(path, 'PATCH', {'completed': True})[0], 200)
+        self.assertEqual(self.call(path, 'PATCH', {'dueDate': '2026-10-16'})[0], 400)
+
     def test_rotating_chore_assigns_next_person(self):
         payload = {'title': 'Dishes', 'profileId': 'alex', 'dueDate': '2026-10-05',
                    'repeatRule': 'daily', 'taskType': 'chore',
@@ -235,6 +254,7 @@ class DashboardApiTest(DashboardServerCase):
         self.assertEqual(self.call('/api/pin', 'POST', {'pin': '2846'})[0], 200)
         self.assertEqual(self.call('/api/pin')[1], {'enabled': True, 'unlocked': False})
         self.assertEqual(self.call('/api/lists', 'POST', {'name': 'Blocked'})[0], 423)
+        self.assertEqual(self.call('/api/tasks/' + task['id'], 'PATCH', {'dueDate': '2026-10-14'})[0], 423)
         self.assertEqual(self.call('/api/tasks/' + task['id'], 'PATCH', {'completed': True})[0], 200)
         self.assertEqual(self.call('/api/pin/unlock', 'POST', {'pin': '0000'})[0], 401)
         request = Request(self.origin + '/api/pin/unlock', data=json.dumps({'pin': '2846'}).encode(),
@@ -1080,6 +1100,12 @@ class ProviderApiTest(DashboardServerCase):
             "title": "Changed", "profileId": "family", "allDay": False,
             "start": "2026-10-05T11:00:00Z", "end": "2026-10-05T12:00:00Z",
         })[0], 200)
+        self.assertEqual(self.call(endpoint, "PATCH", {
+            "title": "Unchanged", "profileId": "family", "allDay": False, "moveOnly": True,
+            "start": "2026-10-06T11:00:00Z", "end": "2026-10-06T12:00:00Z",
+        })[0], 200)
+        self.assertEqual([line for line in self.mock_log.read_text().splitlines()
+                          if line.startswith('GOOGLE_PATCH_KEYS')][-1], 'GOOGLE_PATCH_KEYS end,start')
         self.assertEqual(self.call(endpoint, "DELETE")[0], 200)
         self.assertIn("PATCH https://www.googleapis.com/calendar/v3/calendars/google%40example.test/events/google-event",
                       self.mock_log.read_text())
