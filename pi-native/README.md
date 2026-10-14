@@ -8,6 +8,8 @@ The complete calendar, lists, meals, rewards, import, and settings interface can
 
 ## Pi Zero 2 W memory
 
+The Zero 2 W also ran the full interface through Cog's [direct DRM backend](https://igalia.github.io/cog/platform-drm.html), with working physical touch at 1920 × 1200. Set `ENVE_DISPLAY_BACKEND=drm` on the full-display service to try it. This avoids Cage and reduced graphics allocation in the trial, but physical page changes were still reported slow. Wayland remains the default, and the launcher falls back to it if DRM fails. The direct backend hides the cursor; set `ENVE_DRM_CURSOR=true` for mouse use. Verify the connected screen and input devices before using this mode for an installation.
+
 On the tested Raspberry Pi OS Lite installation with `vc4-kms-v3d`, adding the following to `/boot/firmware/config.txt` returned 32 MB of firmware-reserved RAM to Linux while retaining hardware rendering at 1920 × 1200:
 
 ```ini

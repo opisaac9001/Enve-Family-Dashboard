@@ -514,6 +514,8 @@ function eventColor(event) {
 
 const wallDisplay = new URLSearchParams(location.search).get('kiosk') === '1';
 if (wallDisplay) document.body.dataset.kiosk = '1';
+if (wallDisplay && new URLSearchParams(location.search).get('lean') === '1')
+  document.body.dataset.lowMemory = '1';
 
 async function openWallDisplay() {
   if (!wallDisplay) return false;
@@ -781,8 +783,12 @@ async function loadState() {
   const context = JSON.stringify([state.section, state.view, dateKey(state.cursor)]);
   const range = viewRange();
   const mealWeek = startOfWeek(state.cursor);
-  const from = range.from < mealWeek ? range.from : mealWeek;
-  const to = range.to > addDays(mealWeek, 7) ? range.to : addDays(mealWeek, 7);
+  let from = range.from < mealWeek ? range.from : mealWeek;
+  let to = range.to > addDays(mealWeek, 7) ? range.to : addDays(mealWeek, 7);
+  if (loadedRange && dateKey(from) >= loadedRange.from && dateKey(to) <= loadedRange.to) {
+    from = new Date(`${loadedRange.from}T00:00:00`);
+    to = new Date(`${loadedRange.to}T00:00:00`);
+  }
   try {
     const data = await api(`/api/state?from=${dateKey(from)}&to=${dateKey(to)}`);
     if (context !== JSON.stringify([state.section, state.view, dateKey(state.cursor)])) {
@@ -835,6 +841,7 @@ function navigateCalendar() {
   ) {
     render();
     renderedContext = JSON.stringify([state.section, state.view, dateKey(state.cursor)]);
+    return;
   }
   load();
 }

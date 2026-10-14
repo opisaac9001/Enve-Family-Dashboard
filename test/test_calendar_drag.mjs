@@ -175,7 +175,7 @@ vm.runInContext(
   navigation,
 );
 navigation.navigateCalendar();
-assert.deepEqual(navigationCalls, ['render', 'load']);
+assert.deepEqual(navigationCalls, ['render']);
 assert.equal(navigation.renderedContext, JSON.stringify(['calendar', 'day', '2026-10-13']));
 navigationCalls.length = 0;
 navigation.range.to = new Date('2026-11-01T12:00:00');

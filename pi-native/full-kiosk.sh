@@ -34,12 +34,19 @@ if [ "$low_memory" = auto ]; then
   memory_kb=$(awk '/^MemTotal:/ { print $2 }' /proc/meminfo)
   if [ "$memory_kb" -le 786432 ]; then low_memory=1; else low_memory=0; fi
 fi
-set -- --platform=wl --enable-smooth-scrolling=false --enable-page-cache=false
+set -- --enable-smooth-scrolling=false --enable-page-cache=false
+page_url="$url/?kiosk=1"
 if [ "$low_memory" = 1 ]; then
+  page_url="$page_url&lean=1"
   set -- "$@" --web-mem-limit=256 --web-check-interval=5 \
     --web-conservative-threshold=0.5 --web-strict-threshold=0.75 \
     --net-mem-limit=64 --net-check-interval=5
 fi
 launcher_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 . "$launcher_dir/configure-cursor.sh"
-exec cage -- sh -c 'launcher_dir=$1; url=$2; shift 2; sh "$launcher_dir/configure-display.sh"; exec cog "$@" "$url/?kiosk=1"' sh "$launcher_dir" "$url" "$@"
+if [ "${ENVE_DISPLAY_BACKEND:-wayland}" = drm ]; then
+  if cog --platform=drm --platform-params="renderer=modeset,pointer=true,cursor=${ENVE_DRM_CURSOR:-false}" "$@" "$page_url"; then
+    exit 0
+  fi
+fi
+exec cage -- sh -c 'launcher_dir=$1; page_url=$2; shift 2; sh "$launcher_dir/configure-display.sh"; exec cog --platform=wl "$@" "$page_url"' sh "$launcher_dir" "$page_url" "$@"
