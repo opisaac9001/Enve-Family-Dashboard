@@ -18,7 +18,7 @@
   <a href="./LICENSE.md"><img src="https://img.shields.io/badge/license-AGPL--3.0--only-663399?style=for-the-badge" alt="AGPL-3.0-only license"></a>
 </p>
 
-A self-hosted, touch-friendly family calendar with day, week, and month views; repeating local events; timed reminders; rotating chores, routines, and habits; shared lists; recipe-based meal suggestions; rewards; weather; local photos; import drafts; backups; and an optional parent edit PIN. Google, iCloud, and Outlook Calendar connections are available. The Raspberry Pi Zero 2 W is the one-device target for the server and display, using either the complete WebKit interface or a lighter native interface; physical performance testing is still required. The Mac and Unraid remain server options.
+A self-hosted, touch-friendly family calendar with day, week, and month views; repeating local events; timed reminders; rotating chores, routines, and habits; shared lists; recipe-based meal suggestions; rewards; weather; local photos; import drafts; backups; and an optional parent edit PIN. Google, iCloud, and Outlook Calendar connections are available. Enve Family works well on Raspberry Pi Zero 2 W and works great on Raspberry Pi 4, which we recommend for the smoothest experience. One Raspberry Pi can run both the server and display. **Do not use Orange Pi for this project**: our Zero 3W prototype was not reliable enough for everyday use. The Mac and Unraid remain server options.
 
 ## Screenshots
 
@@ -105,15 +105,22 @@ In Settings → iCloud Calendar, enter the Apple Account email and an [app-speci
 
 The app-specific password is stored in the server's private local SQLite database. Disconnecting the account removes its saved password from the database; you can revoke the password in Apple Account settings. A live account is needed to verify synchronization on a new installation.
 
-## Raspberry Pi Zero 2 W display
+## Raspberry Pi wall display
 
-Build the native display from [pi-native/](pi-native/) and run it alongside the Node server on Raspberry Pi OS Lite. The display connects to `http://127.0.0.1:4317`; phones connect to the Pi's LAN address. The native Pi display does not use Chromium or a desktop environment. Confirm Pi performance, touch input, and backlight control with the actual display hardware. See [DEPLOYMENT.md](DEPLOYMENT.md).
+**Raspberry Pi 4 is recommended.** It works great with the full interface. **Pi Zero 2 W works well** for a compact build, with less headroom for large imports and heavy workloads. **Orange Pi is not supported or recommended**; our Orange Pi Zero 3W prototype did not work reliably enough for this project.
 
-The [deployment guide](DEPLOYMENT.md#hardware-in-our-orange-pi-build) also lists the exact Orange Pi Zero 3W, touchscreen, and cables used in the current wall-display build.
+Run the Node server and the complete WPE WebKit kiosk on the same Raspberry Pi OS Lite device. A lighter native SDL display is also available in [pi-native/](pi-native/). The display connects to `http://127.0.0.1:4317`; phones connect to the Pi's LAN address. See the [build guide, parts, and real setup photos](DEPLOYMENT.md#choose-your-board).
 
-A [flashable Raspberry Pi image recipe](image/README.md) now includes Enve, its full-screen display, Wi-Fi setup support, and Tailscale. A verified public image and the separate Orange Pi Zero 3W image still require clean-card hardware tests.
+<p align="center">
+  <img src="docs/build-photos/pi-zero-calendar-20261014.jpg" alt="Enve Family calendar running on a compact Raspberry Pi Zero setup" width="480">
+  <img src="docs/build-photos/pi-zero-sleep-20261014.jpg" alt="Pi Zero setup showing Enve Family's dim sleep clock" width="480">
+</p>
 
-The dashboard is intended for one household. It supports no password, a shared sign-in, or separate adult accounts; the household owner manages accounts when sign-ins are on. The Tasks tab shows all tasks with status, person, and type filters; tasks live in their own full tab. Offline edits to connected calendar events are not implemented. The full-feature Pi kiosk runs the complete interface with WPE WebKit and an on-screen keyboard. Measure its memory use and responsiveness on the target Pi Zero 2 W and display before relying on it. The native display supports an optional Linux backlight brightness path; actual screen power control depends on the touchscreen hardware.
+The [deployment guide](DEPLOYMENT.md#real-build-photos) includes all three build photos, including the retired Orange Pi prototype, and explains which video and USB touch cables to use for each Raspberry Pi.
+
+A [flashable Raspberry Pi image recipe](image/README.md) includes Enve, its full-screen display, Wi-Fi setup support, and Tailscale. A verified downloadable image still requires clean-card first-boot testing; this is separate from the running Raspberry Pi setups shown above.
+
+The dashboard is intended for one household. It supports no password, a shared sign-in, or separate adult accounts; the household owner manages accounts when sign-ins are on. The Tasks tab shows tasks in a responsive grid with date, status, person, and type filters; tasks live in their own full tab. Offline edits to connected calendar events are not implemented. The full-feature Pi kiosk runs the complete interface with WPE WebKit and an on-screen keyboard. Measure its memory use and responsiveness on the target Pi Zero 2 W and display before relying on it. The native display supports an optional Linux backlight brightness path; actual screen power control depends on the touchscreen hardware.
 
 ## Connect other programs
 

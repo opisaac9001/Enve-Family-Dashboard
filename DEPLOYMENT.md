@@ -2,37 +2,57 @@
 
 Use one server and one SQLite database for the household. Phones and wall displays open that server; they do not keep separate calendars. Changes to local items notify other open devices immediately, and the iPhone app refreshes when it returns to the foreground.
 
-## Hardware in our Orange Pi build
+## Choose your board
 
-These are the parts used for the 15.3-inch wall display. Amazon prices and availability may change.
+| Board | Our experience |
+| --- | --- |
+| **Raspberry Pi 4 — recommended** | Works great and gives the smoothest experience with the full interface. Choose this for a new build when size allows. |
+| **Raspberry Pi Zero 2 W** | Works well as a compact calendar and server. It has less headroom than a Pi 4, so large imports and heavy workloads can take longer. |
+| **Orange Pi — do not use for this build** | Our Orange Pi Zero 3W prototype did not work reliably enough for an everyday wall calendar. Orange Pi is not a supported or recommended Enve Family setup. |
 
-| Part | Purpose |
-|---|---|
-| [Orange Pi Zero 3W, 4 GB](https://www.amazon.com/dp/B0GXYPM431) with heatsink and fan | Runs the Enve server and wall display. |
-| [Showscren 15.3-inch 1920 × 1200 touchscreen](https://www.amazon.com/dp/B0GC555YPC) | Wall display. |
-| [ZeniKon 1-foot mini-HDMI to mini-HDMI cable](https://www.amazon.com/dp/B0FDB9WCYZ) | Video from the board to the monitor. |
-| [Anker 2-in-1 USB-C cable, 6 feet, white](https://www.amazon.com/dp/B0DGLSXGZV) | Intended to power the board and monitor from one charger. |
-| [HOTNOW 6-inch USB-C data cable, five-pack](https://www.amazon.com/dp/B0DPN758M2) | Short data cables also used with other test devices. One may carry touch input between the monitor and a USB host port on the board if the ports and cable reach. |
+Use Raspberry Pi OS Lite (64-bit) for either supported Raspberry Pi board. The photos below show real prototypes; an older interface may differ from the current release.
 
-Add a 32 GB microSD card and a suitable USB-C power supply. HDMI carries video but not touch input. The split cable's 140 W rating does not guarantee that a particular charger can power both devices; test video, touch, and shared power before mounting. The Orange Pi Zero 3W needs an OS image made for that board. The Raspberry Pi OS instructions below apply to Raspberry Pi boards only.
+## Real build photos
 
-The Orange Pi Zero 3W fan on our board normally waits until the CPU reaches 55°C. To have it start at 44°C while leaving the CPU's protective slowdown threshold alone, install [the fan service](pi-native/systemd/enve-orange-fan.service) on an Orange Pi Zero 3W with the same Armbian thermal layout:
+### Pi Zero 2 W running the calendar
 
-```sh
-sudo install -m 0644 pi-native/systemd/enve-orange-fan.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now enve-orange-fan.service
-```
+![Enve Family day calendar on the touchscreen, with the Raspberry Pi Zero board and connected cables visible](docs/build-photos/pi-zero-calendar-20261014.jpg)
 
-Check `systemctl status enve-orange-fan.service` and confirm both CPU fan trip points read `44000` under `/sys/class/thermal/thermal_zone0/` and `thermal_zone3/`. The board's kernel still controls the fan and can raise it to full speed when needed. This service is specific to the Zero 3W's current thermal zone layout; do not install it on a Raspberry Pi or a different Orange Pi model.
+The compact Pi Zero setup runs the calendar, tasks, and household server on the same device.
 
-For people who want to flash a prepared Enve image and set up the household on the screen, see the [image build and validation guide](image/README.md). The Raspberry Pi image recipe is ready for a Linux build and physical trial; a verified downloadable image is not published yet. The Orange Pi image still needs a display-capable base and clean-card testing.
+### Pi Zero sleep clock
+
+![Enve Family sleep clock on the monitor beside the connected Raspberry Pi Zero board](docs/build-photos/pi-zero-sleep-20261014.jpg)
+
+The display switches to a dim clock when idle. This darkens the picture; physical backlight control depends on the monitor.
+
+### Earlier Orange Pi prototype — retired
+
+![Earlier Enve Family touchscreen prototype with an Orange Pi board and heatsink](docs/build-photos/retired-orange-pi-prototype-20261014.jpg)
+
+This photo documents the earlier hardware experiment. **Do not copy its Orange Pi board choice**; use Raspberry Pi 4 or Pi Zero 2 W instead.
+
+## Hardware for our Raspberry Pi build
+
+The touchscreen and accessory links below are the parts used during development. Choose the board and cables to match your installation; prices and availability can change.
+
+| Item | What it is used for |
+| --- | --- |
+| **Raspberry Pi 4 or Pi Zero 2 W** | Runs the Enve server and wall display. Pi 4 is recommended for the smoothest experience. |
+| [Showscren 15.3-inch 1920 × 1200 touchscreen](https://www.amazon.com/dp/B0GC555YPC) | The wall display. |
+| [ZeniKon 1-foot mini-HDMI to mini-HDMI cable](https://www.amazon.com/dp/B0FDB9WCYZ) | Video between Pi Zero 2 W and this monitor. **Pi 4 uses micro-HDMI**, so it needs a micro-HDMI to mini-HDMI cable or the appropriate adapter instead. |
+| [Anker 2-in-1 USB-C cable, 6 feet, white](https://www.amazon.com/dp/B0DGLSXGZV) | A shared power feed, if the charger and adapters can power both devices together. Pi 4 has USB-C power; Pi Zero 2 W needs a micro-USB power connection. |
+| [HOTNOW 6-inch USB-C data cable, five-pack](https://www.amazon.com/dp/B0DPN758M2) | Short cables used with other test devices. For touchscreen data on Pi 4, use USB-A to USB-C. Pi Zero 2 W needs a micro-USB OTG adapter on its USB data port. These USB-C to USB-C cables do not plug directly into either Pi's USB host port. |
+
+Add a 32 GB microSD card and reliable power for the board and monitor. HDMI carries video but not touch input: connect the monitor's USB touch/data port as well. The split cable's 140 W rating does not guarantee that a particular charger can power both devices. Test power, video, and touch before mounting.
+
+For a prepared Enve image, see the [image build and validation guide](image/README.md). The Raspberry Pi recipe has produced a build, but a verified downloadable image still needs clean-card first-boot tests. Orange Pi image work is retired and not a recommended installation path.
 
 ## Target: one Pi for server and display
 
-Use 64-bit Raspberry Pi OS Lite on a Raspberry Pi 4 for a first installation; the Pi Zero 2 W remains the lower-memory target pending a full physical performance test. Run Node 22.13+ and the native [Pi display](pi-native/README.md) on the same board, with one SQLite database on its SD card. The native display connects to the server through `127.0.0.1`; phones connect to the Pi's LAN address. Chromium, X11, and a desktop environment are not part of this setup.
+Use 64-bit Raspberry Pi OS Lite. Enve Family works well on Pi Zero 2 W and works great on Pi 4; Pi 4 is our recommendation for the smoothest full interface. Run Node 22.13+ and the native [Pi display](pi-native/README.md) on the same board, with one SQLite database on its SD card. The native display connects to the server through `127.0.0.1`; phones connect to the Pi's LAN address. Chromium, X11, and a desktop environment are not part of this setup.
 
-For the full-feature trial, install `cage` and `cog` from Raspberry Pi OS packages and launch [pi-native/full-kiosk.sh](pi-native/full-kiosk.sh) from the Pi's local graphical seat while the Enve server is running. Cog runs the existing complete interface with WPE WebKit inside Cage; it does not use Chromium. This path needs a physical Pi Zero 2 W performance and touch test before replacing the native boot service. The first-run page includes Wi-Fi scan and connect when opened locally on the Pi. The native display remains the low-memory fallback.
+For the full-feature trial, install `cage` and `cog` from Raspberry Pi OS packages and launch [pi-native/full-kiosk.sh](pi-native/full-kiosk.sh) from the Pi's local graphical seat while the Enve server is running. Cog runs the existing complete interface with WPE WebKit inside Cage; it does not use Chromium. The full interface has been used on Pi Zero 2 W and Pi 4; check your own monitor and touch connection before mounting. The first-run page includes Wi-Fi scan and connect when opened locally on the Pi. The native display remains the low-memory fallback.
 
 Install the server on persistent storage and keep the database, local device key, and calendar tokens in a private `data/` directory. On first boot, `pi-native/start.sh` opens touch setup with no-password, shared sign-in, and individual adult sign-in choices. Keep port 4317 off the public internet. Connect Google and Outlook accounts after the Pi's final address and OAuth redirect URLs are chosen. See `pi-native/README.md` for build packages, launch settings, display schedules, and memory checks.
 
