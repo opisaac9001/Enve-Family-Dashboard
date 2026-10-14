@@ -1,3 +1,7 @@
+:root {
+  --enve-key-height: clamp(44px, 5.3vh, 64px);
+  --enve-keyboard-space: calc(var(--enve-key-height) * 5 + 45px + env(safe-area-inset-bottom));
+}
 .enve-keyboard {
   --kb-accent: var(--accent, #f5921a);
   --kb-panel: var(--surface, #20242c);
@@ -8,8 +12,8 @@
   z-index: 1000;
   inset: auto 0 0;
   display: grid;
-  gap: 4px;
-  padding: 7px max(8px, env(safe-area-inset-right)) max(7px, env(safe-area-inset-bottom));
+  gap: 6px;
+  padding: 10px max(10px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom));
   background: var(--kb-panel);
   border-top: 1px solid var(--kb-line);
   border-radius: 16px 16px 0 0;
@@ -26,30 +30,28 @@
 .enve-keyboard-row {
   display: flex;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
 }
 .enve-keyboard button {
   flex: 1;
   min-width: 0;
-  height: 36px;
+  height: var(--enve-key-height);
   padding: 0 3px;
   border: 1px solid var(--kb-line);
   border-radius: 10px;
   background: var(--kb-key);
   color: var(--kb-text);
-  font-size: 16px;
+  font-size: clamp(18px, 1.9vh, 24px);
   font-weight: 600;
 }
 .enve-keyboard button.special {
   flex: 1.35;
   background: color-mix(in srgb, var(--kb-accent) 14%, var(--kb-key));
   border-color: color-mix(in srgb, var(--kb-accent) 28%, var(--kb-line));
-  font-size: 15px;
 }
 .enve-keyboard button.space {
   flex: 5;
   color: var(--muted, #b9b1a6);
-  font-size: 14px;
 }
 .enve-keyboard button.done,
 .enve-keyboard button[aria-pressed='true'] {
@@ -73,10 +75,10 @@
   outline-offset: 1px;
 }
 .enve-keyboard-open {
-  padding-bottom: 215px !important;
+  padding-bottom: var(--enve-keyboard-space) !important;
 }
 .enve-keyboard-open dialog[open] {
-  max-height: calc(100vh - 225px);
+  max-height: calc(100vh - var(--enve-keyboard-space) - 16px);
   margin-top: 8px;
   margin-bottom: auto;
   overflow: auto;
