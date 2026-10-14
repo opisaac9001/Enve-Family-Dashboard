@@ -1430,6 +1430,7 @@ function render() {
   $('#import-section').hidden = state.section !== 'import';
   $('#calendar-tools').hidden = state.section !== 'calendar';
   $('.view-picker').hidden = state.section !== 'calendar';
+  $('#profile-filters').hidden = state.section !== 'calendar';
   $('#today-overview').hidden = state.section !== 'calendar';
   $('.page-actions').hidden = ['tasks', 'lists', 'rewards', 'import'].includes(state.section);
   $('#add-button').hidden = state.section !== 'calendar';

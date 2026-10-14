@@ -3132,6 +3132,23 @@ body[data-section='calendar'] footer {
 .navigation-bar .feature-tabs {
   margin-left: auto;
 }
+.navigation-bar > .filters {
+  flex: 1;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.navigation-bar > .filters::-webkit-scrollbar {
+  display: none;
+}
+.navigation-bar > .filters .filter {
+  flex: none;
+  min-height: 44px;
+  white-space: nowrap;
+  padding: 8px 12px;
+}
 .navigation-bar .menu-panel {
   left: auto;
   right: 0;
