@@ -214,37 +214,49 @@
       <main id="tasks-section" class="feature-section tasks-section" hidden>
         <div class="feature-heading">
           <div>
-            <span class="eyebrow">KEEP THINGS MOVING</span>
             <h2>Household tasks</h2>
-            <p class="muted">See everything that needs doing, across the whole family.</p>
           </div>
           <button id="add-task-page" class="primary-button" type="button">
-            <span>＋</span> Add task
+            <span aria-hidden="true">+</span> Add task
           </button>
         </div>
         <div class="tasks-summary">
+          <span class="muted">Household totals</span>
           <div><strong id="tasks-open-count">0</strong><span>To do</span></div>
           <div><strong id="tasks-due-count">0</strong><span>Due today or overdue</span></div>
           <div><strong id="tasks-done-count">0</strong><span>Done</span></div>
         </div>
         <div class="tasks-toolbar">
-          <div id="tasks-status-tabs" class="task-type-tabs" aria-label="Task status">
-            <button type="button" data-task-status="open" class="active">To do</button
-            ><button type="button" data-task-status="done">Done</button
-            ><button type="button" data-task-status="all">All</button>
+          <div id="tasks-date-tabs" class="task-type-tabs" role="group" aria-label="Task dates">
+            <button type="button" data-task-date="all" class="active" aria-pressed="true">
+              All
+            </button>
+            <button type="button" data-task-date="today" aria-pressed="false">Today</button>
+            <button type="button" data-task-date="overdue" aria-pressed="false">Overdue</button>
+            <button type="button" data-task-date="upcoming" aria-pressed="false">Upcoming</button>
+            <button type="button" data-task-date="undated" aria-pressed="false">No date</button>
           </div>
-          <label
-            >Person<select id="tasks-person-filter">
-              <option value="all">Everyone</option>
-            </select></label
-          ><label
-            >Type<select id="tasks-type-filter">
-              <option value="all">All types</option>
-              <option value="chore">Chores</option>
-              <option value="routine">Routines</option>
-              <option value="habit">Habits</option>
-            </select></label
-          >
+          <div class="task-filter-options">
+            <label
+              >Show<select id="tasks-status-filter">
+                <option value="open">To do</option>
+                <option value="done">Done</option>
+                <option value="all">Any status</option>
+              </select></label
+            >
+            <label
+              >Person<select id="tasks-person-filter">
+                <option value="all">Everyone</option>
+              </select></label
+            ><label
+              >Type<select id="tasks-type-filter">
+                <option value="all">All types</option>
+                <option value="chore">Chores</option>
+                <option value="routine">Routines</option>
+                <option value="habit">Habits</option>
+              </select></label
+            >
+          </div>
         </div>
         <div id="all-task-list" class="all-task-list" aria-live="polite"></div>
       </main>

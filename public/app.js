@@ -6,6 +6,7 @@ const state = {
   section: 'calendar',
   settingsGroup: 'calendars',
   taskStatus: 'open',
+  taskDate: 'all',
   taskPerson: 'all',
   taskType: 'all',
   hiddenProfiles: new Set(),
@@ -1335,7 +1336,9 @@ function renderTaskRow(task, context = 'all') {
       ? `${escapeHtml(person?.name || 'Anyone')}${task.dueTime ? ` · ${escapeHtml(task.dueTime)}` : ''}${task.dueDate && task.dueDate < dateKey(new Date()) && !task.completed ? ' · Overdue' : ''}${task.starValue ? ` · ★ ${task.starValue}` : ''}`
       : `${escapeHtml(person?.name || '')}${task.dueDate ? ` · ${escapeHtml(task.dueDate)}` : ''}${task.dueTime ? ` ${escapeHtml(task.dueTime)}` : ''} · ${escapeHtml(task.taskType)}${task.repeatRule !== 'none' ? ` · ${escapeHtml(task.repeatRule)}` : ''}${nextId ? ` · Next: ${escapeHtml(profile(nextId)?.name || '')}` : ''}${task.starValue ? ` · ★ ${task.starValue}` : ''}${habitStreak(task) ? ` · ${habitStreak(task)} streak` : ''}`;
   const claim = task.claimable && !task.claimedBy && !task.completed;
-  return `<div class="task-row ${task.completed ? 'completed' : ''}">${claim ? '<span class="claim-dot">☆</span>' : `${context === 'day' ? '<label class="day-task-toggle">' : ''}<input class="task-check" type="checkbox" data-task="${task.id}" aria-label="Complete ${escapeHtml(task.title)}" ${task.completed ? 'checked' : ''}>${context === 'day' ? '</label>' : ''}`}<div class="task-copy"><strong>${escapeHtml(task.title)}</strong><small><span style="color:${person?.color || '#F5921A'}">●</span> ${details}${task.skipped ? ' · skipped' : ''}</small>${
+  const toggleClass =
+    context === 'day' ? 'day-task-toggle' : context === 'page' ? 'task-page-toggle' : '';
+  return `<div class="task-row ${task.completed ? 'completed' : ''}">${claim ? '<span class="claim-dot">☆</span>' : `${toggleClass ? `<label class="${toggleClass}">` : ''}<input class="task-check" type="checkbox" data-task="${task.id}" aria-label="Complete ${escapeHtml(task.title)}" ${task.completed ? 'checked' : ''}>${toggleClass ? '</label>' : ''}`}<div class="task-copy"><strong>${escapeHtml(task.title)}</strong><small><span style="color:${person?.color || '#F5921A'}">●</span> ${details}${task.skipped ? ' · skipped' : ''}</small>${
     claim
       ? `<div class="claim-controls"><select data-claim-person="${task.id}" aria-label="Person claiming ${escapeHtml(task.title)}">${state.data.profiles
           .filter((item) => !['family', 'enve'].includes(item.id))
@@ -1366,15 +1369,26 @@ function renderTasksPage() {
   if (personSelect.innerHTML !== options) personSelect.innerHTML = options;
   personSelect.value = state.taskPerson;
   $('#tasks-type-filter').value = state.taskType;
-  $('#tasks-status-tabs')
+  $('#tasks-status-filter').value = state.taskStatus;
+  $('#tasks-date-tabs')
     .querySelectorAll('button')
-    .forEach((button) =>
-      button.classList.toggle('active', button.dataset.taskStatus === state.taskStatus),
-    );
+    .forEach((button) => {
+      const active = button.dataset.taskDate === state.taskDate;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
   const filtered = tasks
     .filter(
       (task) =>
         (state.taskStatus === 'all' || task.completed === (state.taskStatus === 'done')) &&
+        (state.taskDate === 'all' ||
+          (state.taskDate === 'today' && task.dueDate === today) ||
+          (state.taskDate === 'overdue' &&
+            !task.completed &&
+            task.dueDate &&
+            task.dueDate < today) ||
+          (state.taskDate === 'upcoming' && task.dueDate > today) ||
+          (state.taskDate === 'undated' && !task.dueDate)) &&
         (state.taskPerson === 'all' || task.profileId === state.taskPerson) &&
         (state.taskType === 'all' || task.taskType === state.taskType),
     )
@@ -1385,8 +1399,8 @@ function renderTasksPage() {
         a.title.localeCompare(b.title),
     );
   $('#all-task-list').innerHTML = filtered.length
-    ? filtered.map((task) => renderTaskRow(task)).join('')
-    : `<p class="empty-copy">${state.taskStatus === 'open' ? 'All caught up. Add a task when something comes to mind.' : 'No tasks match these filters.'}</p>`;
+    ? filtered.map((task) => renderTaskRow(task, 'page')).join('')
+    : `<p class="empty-copy">${state.taskDate === 'overdue' && state.taskStatus === 'done' ? 'Completed tasks aren’t overdue. Choose To do or Any status.' : 'No tasks match these filters. Try another date, person, or status.'}</p>`;
 }
 
 function render() {
@@ -2498,12 +2512,16 @@ $('#calendar-section').addEventListener('click', (event) => {
   const button = event.target.closest('[data-add-day-task]');
   if (button) openEntry('task', new Date(`${button.dataset.addDayTask}T12:00:00`));
 });
-$('#tasks-status-tabs').addEventListener('click', (event) => {
-  const button = event.target.closest('[data-task-status]');
+$('#tasks-date-tabs').addEventListener('click', (event) => {
+  const button = event.target.closest('[data-task-date]');
   if (button) {
-    state.taskStatus = button.dataset.taskStatus;
+    state.taskDate = button.dataset.taskDate;
     renderTasksPage();
   }
+});
+$('#tasks-status-filter').addEventListener('change', (event) => {
+  state.taskStatus = event.target.value;
+  renderTasksPage();
 });
 $('#tasks-person-filter').addEventListener('change', (event) => {
   state.taskPerson = event.target.value;
