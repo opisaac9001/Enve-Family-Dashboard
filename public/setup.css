@@ -465,3 +465,38 @@ h2 {
     width: 100%;
   }
 }
+@media (max-height: 650px) {
+  .setup-shell {
+    margin: 8px auto;
+    padding: 18px 24px 20px;
+  }
+  .progress {
+    margin: 14px 0 12px;
+  }
+  h1 {
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+  .intro {
+    margin-bottom: 14px;
+  }
+  .fields {
+    gap: 10px;
+  }
+  .mode-options label {
+    padding: 10px 14px;
+  }
+  #people-list {
+    max-height: none;
+    overflow: visible;
+  }
+  .actions {
+    position: sticky;
+    bottom: 0;
+    padding: 10px 0;
+    background: #20242c;
+  }
+  .enve-keyboard-open .actions {
+    visibility: hidden;
+  }
+}

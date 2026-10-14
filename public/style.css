@@ -228,6 +228,12 @@ body[data-low-memory] .calendar-panel {
 .list-sort select {
   width: auto;
   min-width: 150px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
 }
 .list-section-title {
   color: var(--muted);
@@ -384,8 +390,30 @@ body[data-low-memory] .calendar-panel {
 .all-task-list .task-copy small {
   font-size: 12px;
 }
-body[data-section='tasks'] .page-head {
+body[data-section='tasks'] .page-head,
+body[data-section='lists'] .page-head,
+body[data-section='rewards'] .page-head,
+body[data-section='import'] .page-head {
   display: none;
+}
+@media (max-height: 650px) {
+  .tasks-section .feature-heading .eyebrow,
+  .tasks-section .feature-heading p {
+    display: none;
+  }
+  .tasks-summary div {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+    padding: 6px 10px;
+  }
+  .tasks-summary strong {
+    font-size: 18px;
+  }
+  .tasks-toolbar label {
+    grid-auto-flow: column;
+    align-items: center;
+  }
 }
 @media (max-width: 650px) {
   .tasks-section {
@@ -457,7 +485,7 @@ body[data-section='tasks'] .page-head {
 }
 .import-drafts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
   gap: 16px;
   margin-top: 25px;
 }
@@ -839,7 +867,7 @@ h2 {
 }
 .lists-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   align-items: start;
   gap: 16px;
 }
@@ -863,6 +891,21 @@ h2 {
 .list-card .task-row strong {
   flex: 1;
   font-size: 14px;
+}
+.list-item-toggle {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 10px;
+  min-width: 0;
+  min-height: 44px;
+  cursor: pointer;
+}
+.list-card .task-row input[type='checkbox'] {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  accent-color: var(--accent);
 }
 .list-card .inline-form {
   display: grid;
@@ -896,8 +939,8 @@ h2 {
 }
 .meal-day .round-add {
   flex: none;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--line);
   border-radius: 50%;
   background: var(--surface);
@@ -905,8 +948,7 @@ h2 {
   font-size: 18px;
 }
 .meal-row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
   align-items: start;
   gap: 8px;
   padding: 10px 0 10px 10px;
@@ -943,16 +985,16 @@ h2 {
 .meal-row-actions {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 6px;
   flex: none;
 }
 .meal-row-actions .secondary-button {
-  height: 34px;
+  height: 44px;
   padding: 0 10px;
 }
 .meal-row-actions .task-delete {
-  min-width: 34px;
-  min-height: 34px;
+  min-width: 44px;
+  min-height: 44px;
 }
 .meal-status {
   color: var(--muted);
@@ -1329,7 +1371,7 @@ h2 {
 }
 .recipes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
   align-items: start;
   gap: 14px;
 }
@@ -1395,16 +1437,22 @@ h2 {
 .reward-form {
   margin-bottom: 24px;
 }
-.reward-form input[name='title'] {
+.reward-form,
+.goal-form {
+  max-width: 900px;
+}
+.reward-form input[name='title'],
+.goal-form input[name='title'] {
   flex: 1;
   min-width: 180px;
 }
-.reward-form input[name='cost'] {
+.reward-form input[name='cost'],
+.goal-form input[name='target'] {
   width: 95px;
 }
 .rewards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
   gap: 14px;
 }
 .reward-card {
@@ -1727,10 +1775,10 @@ h2 {
   color: var(--text);
   border: 1px solid var(--line);
   border-radius: 8px;
-  height: 32px;
+  height: 44px;
 }
 .claim-controls .secondary-button {
-  height: 32px;
+  height: 44px;
   padding: 0 9px;
 }
 .rotation-picker {
@@ -1796,6 +1844,8 @@ h2 {
   }
 }
 .task-skip {
+  min-width: 44px;
+  min-height: 44px;
   border: 0;
   background: transparent;
   color: var(--muted);
@@ -1803,6 +1853,8 @@ h2 {
   padding: 3px;
 }
 .task-delete {
+  min-width: 44px;
+  min-height: 44px;
   border: 0;
   background: none;
   color: var(--muted);
@@ -1832,7 +1884,7 @@ footer span {
 }
 .dialog {
   width: min(440px, calc(100vw - 28px));
-  max-height: calc(100vh - 36px);
+  max-height: calc(100dvh - 36px);
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--text);
@@ -1852,6 +1904,7 @@ footer span {
 .settings-layout {
   display: grid;
   grid-template-columns: 190px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 22px;
   flex: 1;
   min-height: 0;
@@ -1861,6 +1914,8 @@ footer span {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  min-height: 0;
+  overflow: auto;
   padding-right: 14px;
   border-right: 1px solid var(--line);
 }
@@ -1888,6 +1943,14 @@ footer span {
 }
 .settings-nav button[aria-current='page'] strong {
   color: var(--accent);
+}
+@media (max-height: 650px) {
+  .settings-nav button span {
+    display: none;
+  }
+  .settings-nav button {
+    padding: 9px 12px;
+  }
 }
 .settings-intro {
   padding: 2px 4px 18px;
@@ -2041,8 +2104,17 @@ body[data-kiosk] .dialog::backdrop {
   color: var(--text);
 }
 .dialog-actions {
+  flex-wrap: wrap;
+  flex: none;
   justify-content: flex-end;
   margin-top: 24px;
+}
+.dialog .backup-upload {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
 }
 .form-error {
   color: #e77d6d;
@@ -2283,6 +2355,7 @@ body[data-kiosk] .dialog::backdrop {
 }
 .person-row button,
 .account-row button {
+  min-height: 44px;
   padding: 9px;
   border: 1px solid var(--line);
   border-radius: 9px;
@@ -2325,12 +2398,19 @@ body[data-kiosk] .dialog::backdrop {
 .account-calendars .calendar-row {
   margin: 10px 0;
 }
-.calendar-row {
-  margin-left: 15px;
-  font-size: 11px;
-  color: var(--muted);
+.dialog .calendar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
 }
 .calendar-row input {
+  flex: none;
+  width: 20px;
+  height: 20px;
   accent-color: var(--accent);
 }
 .connect-row {

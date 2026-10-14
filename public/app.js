@@ -1624,7 +1624,7 @@ function renderLists() {
               .filter((item) => (item.section || '') === section)
               .map(
                 (item) =>
-                  `<div class="task-row ${item.checked ? 'completed' : ''}"><input type="checkbox" data-list-item="${item.id}" aria-label="Check ${escapeHtml(item.title)}" ${item.checked ? 'checked' : ''}><strong>${escapeHtml(item.title)}</strong><button class="task-delete" data-delete-item="${item.id}" aria-label="Delete ${escapeHtml(item.title)}">×</button></div>`,
+                  `<div class="task-row ${item.checked ? 'completed' : ''}"><label class="list-item-toggle"><input type="checkbox" data-list-item="${item.id}" aria-label="Check ${escapeHtml(item.title)}" ${item.checked ? 'checked' : ''}><strong>${escapeHtml(item.title)}</strong></label><button class="task-delete" data-delete-item="${item.id}" aria-label="Delete ${escapeHtml(item.title)}">×</button></div>`,
               )
               .join('')}`,
         )

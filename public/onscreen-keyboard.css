@@ -83,3 +83,15 @@
   margin-bottom: auto;
   overflow: auto;
 }
+.enve-keyboard-open .settings-dialog > .dialog-header,
+.enve-keyboard-open .settings-dialog .settings-nav,
+.enve-keyboard-open .settings-dialog > .dialog-actions {
+  display: none;
+}
+.enve-keyboard-open .settings-layout {
+  display: flex;
+  margin-top: 0;
+}
+.enve-keyboard-open .settings-scroll {
+  flex: 1;
+}
