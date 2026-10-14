@@ -2984,13 +2984,14 @@ function scheduleDragScroll() {
   });
 }
 
-function beginCalendarPress(target, x, y, pointer) {
+function beginCalendarPress(target, x, y, pointer, input = 'pointer') {
   if (calendarDrag || state.section !== 'calendar' || !state.data) return;
   const element = target.closest('[data-event], [data-drag-event], .timeline-task');
   if (!element || !$('#week-grid').contains(element)) return;
   calendarDrag = {
     element,
     pointer,
+    input,
     startX: x,
     startY: y,
     x,
@@ -3056,7 +3057,7 @@ function activateCalendarDrag() {
   document.body.append(drag.ghost);
   element.classList.add('drag-source');
   $('#week-grid').classList.add('dragging');
-  if (typeof drag.pointer === 'number') {
+  if (drag.input === 'pointer' && typeof drag.pointer === 'number') {
     try {
       $('#week-grid').setPointerCapture(drag.pointer);
     } catch {}
@@ -3074,7 +3075,11 @@ function clearCalendarDrag() {
   drag.highlighted?.classList.remove('drag-target');
   drag.element.classList.remove('drag-source');
   $('#week-grid').classList.remove('dragging');
-  if (typeof drag.pointer === 'number' && $('#week-grid').hasPointerCapture?.(drag.pointer))
+  if (
+    drag.input === 'pointer' &&
+    typeof drag.pointer === 'number' &&
+    $('#week-grid').hasPointerCapture?.(drag.pointer)
+  )
     $('#week-grid').releasePointerCapture(drag.pointer);
   if (drag.active) suppressClickUntil = performance.now() + 600;
   calendarDrag = null;
@@ -3220,30 +3225,22 @@ function dragTouch(event) {
 
 if (window.PointerEvent) {
   $('#week-grid').addEventListener('pointerdown', (event) => {
-    if (event.isPrimary && event.button === 0)
+    if (event.pointerType !== 'touch' && event.isPrimary && event.button === 0)
       beginCalendarPress(event.target, event.clientX, event.clientY, event.pointerId);
   });
   window.addEventListener('pointermove', (event) => {
-    if (calendarDrag?.pointer === event.pointerId) moveCalendarPress(event.clientX, event.clientY);
+    if (calendarDrag?.input === 'pointer' && calendarDrag.pointer === event.pointerId)
+      moveCalendarPress(event.clientX, event.clientY);
   });
   window.addEventListener('pointerup', (event) => {
-    if (calendarDrag?.pointer === event.pointerId) endCalendarPress(event.clientX, event.clientY);
+    if (calendarDrag?.input === 'pointer' && calendarDrag.pointer === event.pointerId)
+      endCalendarPress(event.clientX, event.clientY);
   });
   window.addEventListener('pointercancel', (event) => {
-    if (calendarDrag?.pointer === event.pointerId) cancelCalendarPress('Move canceled');
+    if (calendarDrag?.input === 'pointer' && calendarDrag.pointer === event.pointerId)
+      cancelCalendarPress('Move canceled');
   });
 } else {
-  $('#week-grid').addEventListener(
-    'touchstart',
-    (event) => {
-      if (calendarDrag) cancelCalendarPress('Move canceled');
-      else if (event.touches.length === 1) {
-        const touch = event.touches[0];
-        beginCalendarPress(event.target, touch.clientX, touch.clientY, touch.identifier);
-      }
-    },
-    { passive: true },
-  );
   $('#week-grid').addEventListener('mousedown', (event) => {
     if (event.button === 0) beginCalendarPress(event.target, event.clientX, event.clientY, 'mouse');
   });
@@ -3253,21 +3250,37 @@ if (window.PointerEvent) {
   window.addEventListener('mouseup', (event) => {
     if (calendarDrag?.pointer === 'mouse') endCalendarPress(event.clientX, event.clientY);
   });
-  $('#week-grid').addEventListener('touchend', (event) => {
-    const touch = dragTouch(event);
-    if (touch) endCalendarPress(touch.clientX, touch.clientY);
-  });
-  $('#week-grid').addEventListener('touchcancel', (event) => {
-    if (dragTouch(event)) cancelCalendarPress('Move canceled');
-  });
 }
+$('#week-grid').addEventListener(
+  'touchstart',
+  (event) => {
+    if (event.touches.length !== 1) {
+      if (calendarDrag) cancelCalendarPress('Move canceled');
+      return;
+    }
+    if (calendarDrag?.input === 'touch') return;
+    if (calendarDrag) clearCalendarDrag();
+    const touch = event.touches[0];
+    beginCalendarPress(event.target, touch.clientX, touch.clientY, touch.identifier, 'touch');
+  },
+  { passive: true },
+);
+$('#week-grid').addEventListener('touchend', (event) => {
+  if (calendarDrag?.input !== 'touch') return;
+  const touch = dragTouch(event);
+  if (touch) endCalendarPress(touch.clientX, touch.clientY);
+});
+$('#week-grid').addEventListener('touchcancel', (event) => {
+  if (calendarDrag?.input !== 'touch') return;
+  if (dragTouch(event)) cancelCalendarPress('Move canceled');
+});
 // Scrolling can only be blocked from touchmove; pointer listeners can't stop a pan once it starts.
 $('#week-grid').addEventListener(
   'touchmove',
   (event) => {
     if (!calendarDrag) return;
     if (calendarDrag.active && !calendarDrag.refused && event.cancelable) event.preventDefault();
-    const touch = !window.PointerEvent && dragTouch(event);
+    const touch = calendarDrag.input === 'touch' && dragTouch(event);
     if (touch) moveCalendarPress(touch.clientX, touch.clientY);
   },
   { passive: false },

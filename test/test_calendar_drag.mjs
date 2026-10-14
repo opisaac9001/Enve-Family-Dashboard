@@ -312,3 +312,55 @@ assert.equal(
   context.eventOnDay({ start: '2026-03-07', end: '2026-03-08', allDay: true }, springDay),
   false,
 );
+
+const pointerHandlers = new Map();
+const touchHandlers = new Map();
+grid.addEventListener = (name, handler) => touchHandlers.set(name, handler);
+context.window = {
+  PointerEvent: true,
+  addEventListener: (name, handler) => pointerHandlers.set(name, handler),
+};
+context.document.addEventListener = () => {};
+context.showToast = () => {};
+vm.runInContext(
+  source.slice(
+    source.indexOf('if (window.PointerEvent)'),
+    source.indexOf("$('#edit-event').addEventListener"),
+  ),
+  context,
+);
+const finger = { identifier: 7, clientX: 100, clientY: 783 };
+touchHandlers.get('pointerdown')({
+  target: element,
+  pointerType: 'mouse',
+  isPrimary: true,
+  button: 0,
+  clientX: 100,
+  clientY: 783,
+  pointerId: 7,
+});
+touchHandlers.get('touchstart')({ target: element, touches: [finger] });
+timer();
+pointerHandlers.get('pointercancel')({ pointerId: 7 });
+assert.equal(vm.runInContext('calendarDrag.input', context), 'touch');
+let blockedScroll = false;
+const movedFinger = { ...finger, clientX: 200, clientY: 847 };
+touchHandlers.get('touchmove')({
+  changedTouches: [movedFinger],
+  cancelable: true,
+  preventDefault() {
+    blockedScroll = true;
+  },
+});
+assert.equal(blockedScroll, true);
+const savedMoves = calls.length;
+touchHandlers.get('touchend')({ changedTouches: [movedFinger] });
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(calls.length, savedMoves + 1);
+assert.equal(calls.at(-1).payload.start, '2026-03-09T17:00:00.000Z');
+assert.equal(vm.runInContext('calendarDrag', context), null);
+touchHandlers.get('touchstart')({ target: element, touches: [finger] });
+timer();
+touchHandlers.get('touchcancel')({ changedTouches: [finger] });
+assert.equal(vm.runInContext('calendarDrag', context), null);
+assert.equal(calls.length, savedMoves + 1);
