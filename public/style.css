@@ -107,6 +107,14 @@ body[data-kiosk][data-theme='light'] .ambient {
   margin: auto;
   padding: 22px clamp(18px, 3vw, 52px) 14px;
 }
+body[data-night-tint='true']::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 18;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.18);
+}
 .topbar,
 .topbar-right,
 .page-head,

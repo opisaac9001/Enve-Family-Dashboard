@@ -58,10 +58,13 @@ let celebrationTimeout = null;
 let selectedWifi = null;
 let loadPromise = null;
 let reloadPending = false;
-let renderedState = '';
+let renderedContext = '';
+let renderedData = '';
 let displayTimeout = null;
+let displayState = '';
 let calendarDrag = null;
 let dragReloadPending = false;
+let loadedRange = null;
 const pendingRequests = new Set();
 const snapshotKey = 'enve-offline-state';
 const outboxKey = 'enve-outbox';
@@ -790,9 +793,10 @@ async function loadState() {
       dragReloadPending = true;
       return;
     }
-    const content = JSON.stringify([context, data]);
-    const changed = content !== renderedState;
+    const content = JSON.stringify(data);
+    const changed = context !== renderedContext || content !== renderedData;
     state.data = data;
+    loadedRange = { from: dateKey(from), to: dateKey(to) };
     state.updatedAt = Date.now();
     if (changed) saveSnapshot(data);
     renderConnection();
@@ -802,7 +806,8 @@ async function loadState() {
       : clearError();
     if (changed) {
       render();
-      renderedState = content;
+      renderedContext = context;
+      renderedData = content;
     }
     if ($('#search-events').value.trim().length >= 2) searchEvents();
   } catch (error) {
@@ -820,6 +825,18 @@ async function loadState() {
         showError('Can’t reach the Enve Family server, and no saved copy is on this device yet.');
     } else if (error.status !== 401) showError(error.message);
   }
+}
+function navigateCalendar() {
+  const range = viewRange();
+  if (
+    loadedRange &&
+    dateKey(range.from) >= loadedRange.from &&
+    dateKey(range.to) <= loadedRange.to
+  ) {
+    render();
+    renderedContext = JSON.stringify([state.section, state.view, dateKey(state.cursor)]);
+  }
+  load();
 }
 function weatherLabel(code) {
   if (code === 0) return 'Clear';
@@ -902,7 +919,7 @@ function moveCursor(direction) {
   else if (state.view === 'month')
     state.cursor = new Date(state.cursor.getFullYear(), state.cursor.getMonth() + direction, 1);
   else state.cursor = addDays(state.cursor, direction * (state.view === 'day' ? 1 : 7));
-  load();
+  navigateCalendar();
 }
 
 function profile(id) {
@@ -913,14 +930,24 @@ function visible(item) {
   return !state.hiddenProfiles.has(item.profileId);
 }
 
+const eventTimes = new WeakMap();
+const dayTimes = new WeakMap();
 function eventOnDay(event, day) {
-  const next = dateKey(addDays(day, 1));
-  const current = dateKey(day);
-  if (event.allDay) return event.start < next && event.end > current;
-  return (
-    Date.parse(event.start) < new Date(`${next}T00:00:00`).getTime() &&
-    Date.parse(event.end) > new Date(`${current}T00:00:00`).getTime()
-  );
+  if (event.allDay) return event.start < dateKey(addDays(day, 1)) && event.end > dateKey(day);
+  let times = eventTimes.get(event);
+  if (!times) {
+    times = [Date.parse(event.start), Date.parse(event.end)];
+    eventTimes.set(event, times);
+  }
+  let bounds = dayTimes.get(day);
+  if (!bounds) {
+    bounds = [
+      new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime(),
+      new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1).getTime(),
+    ];
+    dayTimes.set(day, bounds);
+  }
+  return times[0] < bounds[1] && times[1] > bounds[0];
 }
 
 function eventTime(event) {
@@ -1360,9 +1387,17 @@ function render() {
     dragReloadPending = true;
     return;
   }
-  $('#settings-button').disabled = !state.data;
   const { from, days } = viewRange();
   const end = addDays(from, days - 1);
+  const timelineKey =
+    state.section === 'calendar' && ['day', 'week'].includes(state.view)
+      ? `${state.view}:${dateKey(from)}`
+      : null;
+  const previousScroll =
+    timelineKey && timelineKey === state.timelineKey ? timelineScroller()?.scrollTop : null;
+  const todayDate = new Date();
+
+  $('#settings-button').disabled = !state.data;
   document.body.dataset.section = state.section;
   $('.page-head .eyebrow').textContent =
     state.section === 'calendar'
@@ -1456,10 +1491,6 @@ function render() {
       )
       .join('');
     const today = dateKey(new Date());
-    const timelineKey = ['day', 'week'].includes(state.view)
-      ? `${state.view}:${dateKey(from)}`
-      : null;
-    const previousScroll = timelineKey === state.timelineKey ? timelineScroller()?.scrollTop : null;
     $('#week-grid').className = `week-grid ${state.view}-view`;
     $('#week-grid').style.setProperty('--month-weeks', state.view === 'month' ? days / 7 : 6);
     $('#week-grid').style.setProperty('--timeline-min-height', `${timelineMinimumHeight()}px`);
@@ -1527,17 +1558,8 @@ function render() {
             }
             return `<div class="day-column ${key === today ? 'today' : ''} ${day.getMonth() !== state.cursor.getMonth() && state.view === 'month' ? 'outside-month' : ''}" data-day-column="${key}"><button type="button" class="day-header" data-day="${key}" aria-label="Show ${escapeHtml(dayFormat.format(day))}, ${events.length} events"><span class="day-name">${weekdayFormat.format(day)}</span><span class="day-number">${day.getDate()}</span></button>${content}</div>`;
           }).join('');
-    if (timelineKey) {
-      updateNowLine();
-      if (previousScroll != null) timelineScroller().scrollTop = previousScroll;
-      else {
-        if (state.view === 'day') $('.calendar-panel').scrollTop = 0;
-        scrollTimeline();
-      }
-    } else if (state.timelineKey) $('.calendar-panel').scrollTop = 0;
-    state.timelineKey = timelineKey;
     const todayEvents = state.data.events
-      .filter((event) => visible(event) && eventOnDay(event, new Date()))
+      .filter((event) => visible(event) && eventOnDay(event, todayDate))
       .sort((a, b) => a.start.localeCompare(b.start));
     const dueTasks = state.data.tasks.filter(
       (task) => visible(task) && !task.completed && (!task.dueDate || task.dueDate <= today),
@@ -1567,6 +1589,17 @@ function render() {
   if ($('#settings-dialog').open) renderSettings();
   else if ($('#calendar-connect-dialog').open) renderCalendarConnect();
   applyDisplay();
+  if (state.section === 'calendar') {
+    if (timelineKey) {
+      updateNowLine();
+      if (previousScroll != null) timelineScroller().scrollTop = previousScroll;
+      else {
+        if (state.view === 'day') $('.calendar-panel').scrollTop = 0;
+        scrollTimeline();
+      }
+    } else if (state.timelineKey) $('.calendar-panel').scrollTop = 0;
+    state.timelineKey = timelineKey;
+  }
 }
 
 function renderLists() {
@@ -2230,7 +2263,6 @@ function applyDisplay() {
   const accent = /^#[0-9a-fA-F]{6}$/.test(settings.accent_color || '')
     ? settings.accent_color
     : '#F5921A';
-  document.documentElement.style.setProperty('--accent', accent);
   const now = new Date();
   const current = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   const lightPeriod =
@@ -2238,11 +2270,6 @@ function applyDisplay() {
       ? current >= settings.light_at && current < settings.dark_at
       : current >= settings.light_at || current < settings.dark_at;
   const dark = settings.theme === 'dark' || (settings.theme === 'auto' && !lightPeriod);
-  document.body.dataset.theme = dark ? 'dark' : 'light';
-  document.body.dataset.density = settings.display_density;
-  document.body.dataset.textSize = settings.text_size;
-  document.body.dataset.layout = settings.layout_mode;
-  $('#app').style.filter = dark && settings.night_dim === 'true' ? 'brightness(.82)' : '';
   const idleMinutes = Number(settings.dim_after_minutes);
   const dim = idleMinutes > 0 && performance.now() - state.idleAt >= idleMinutes * 60000;
   const sleepWindow =
@@ -2267,18 +2294,45 @@ function applyDisplay() {
       (!sleeping &&
         settings.photos_enabled === 'true' &&
         performance.now() - state.idleAt >= Number(settings.photos_after_minutes) * 60000));
-  $('#photo-layer').hidden = !showPhoto;
-  if (showPhoto) updatePhoto();
-  else $('#photo-image').removeAttribute('src');
-  layer.hidden = showPhoto || !(dim || sleeping || state.dimPreview);
-  document.body.dataset.nightSleep = String(nightSleep && !layer.hidden);
   const strength = nightSleep
     ? Number(settings.night_dim_amount || 100)
     : Number(settings.dim_amount);
+  const showDim = !showPhoto && Boolean(dim || sleeping || state.dimPreview);
+  const clock = timeFormat.format(now);
+  const appearance = JSON.stringify([
+    accent,
+    dark,
+    settings.display_density,
+    settings.text_size,
+    settings.layout_mode,
+    settings.night_dim,
+    showPhoto,
+    showDim,
+    nightSleep,
+    strength,
+    clock,
+    showPhoto ? state.photos[state.photoIndex]?.id : null,
+  ]);
+  if (appearance === displayState) {
+    scheduleDisplay();
+    return;
+  }
+  displayState = appearance;
+  document.documentElement.style.setProperty('--accent', accent);
+  document.body.dataset.theme = dark ? 'dark' : 'light';
+  document.body.dataset.density = settings.display_density;
+  document.body.dataset.textSize = settings.text_size;
+  document.body.dataset.layout = settings.layout_mode;
+  document.body.dataset.nightTint = String(dark && settings.night_dim === 'true');
+  $('#photo-layer').hidden = !showPhoto;
+  if (showPhoto) updatePhoto();
+  else $('#photo-image').removeAttribute('src');
+  layer.hidden = !showDim;
+  document.body.dataset.nightSleep = String(nightSleep && showDim);
   layer.dataset.darkest = String(nightSleep && strength === 100);
   layer.style.background = `rgba(0,0,0,${strength / 100})`;
   layer.style.color = nightSleep ? (strength === 100 ? '#181818' : '#686868') : '';
-  $('#dim-clock').textContent = timeFormat.format(now);
+  $('#dim-clock').textContent = clock;
   scheduleDisplay();
 }
 
@@ -2420,7 +2474,7 @@ async function saveSetting(key, value) {
 $('#today-button').addEventListener('click', () => {
   state.cursor = new Date();
   state.timelineKey = null;
-  load();
+  navigateCalendar();
 });
 $('#previous-week').addEventListener('click', () => moveCursor(-1));
 $('#next-week').addEventListener('click', () => moveCursor(1));
@@ -2457,7 +2511,7 @@ document.querySelector('.view-picker').addEventListener('click', (event) => {
   if (button) {
     state.view = button.dataset.view;
     $('#more-sections').open = false;
-    load();
+    navigateCalendar();
   }
 });
 $('#add-button').addEventListener('click', () => openEntry('event', state.cursor));
@@ -2765,7 +2819,7 @@ $('#week-grid').addEventListener('click', (event) => {
   if (!day) return;
   state.cursor = new Date(`${day.dataset.day || day.dataset.dayColumn}T12:00:00`);
   state.view = 'day';
-  load();
+  navigateCalendar();
 });
 
 const dragHoldMs = 1000;

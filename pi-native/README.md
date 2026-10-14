@@ -6,6 +6,18 @@ This SDL client is the low-memory wall screen for the Enve Family server. It has
 
 The complete calendar, lists, meals, rewards, import, and settings interface can be tried on the same Pi with WPE WebKit instead of Chromium. Install the Raspberry Pi OS `cog`, `cage`, and `wlr-randr` packages, start the Enve server, then run `pi-native/full-kiosk.sh` from a local Pi login session with access to the display and input devices. For boot launch, install `pi-native/systemd/enve-family-full-display.service` and disable `enve-family-display.service`. The full display unit uses the first local console and clears inherited capabilities so WebKit's sandbox can start. The script opens `127.0.0.1` in kiosk mode; first-run setup includes Wi-Fi scanning and an on-screen keyboard. The pointer starts hidden, appears when a mouse moves, and hides again after two seconds without mouse movement. Touch does not show it. Use the existing native display service as the fallback until the full interface has been exercised and measured on the Pi Zero 2 W. Do not enable both displays on the same screen at once. When HDMI and USB-C DisplayPort are both connected, the kiosk uses HDMI for video and disables the extra DisplayPort output so the calendar stays on one screen. USB touch input remains available. Connect the screen before starting the device; reconnecting cables may require restarting the display. The kiosk disables animated smooth scrolling to reduce rendering work on boards using software graphics. If Linux has no GPU render node, the launcher uses Cage’s Pixman software compositor instead of emulating a GPU through LLVMpipe. Devices with a GPU render node retain the default renderer. An explicit `WLR_RENDERER` setting overrides this choice. On the tested Orange Pi Zero 3W with Armbian 26.8.1 and kernel `6.6.98-vendor-sun60iw2`, the screen remained at 1920 × 1200 and physical scrolling was reported smoother. This improves software compositing; it does not enable the PowerVR GPU.
 
+## Pi Zero 2 W memory
+
+On the tested Raspberry Pi OS Lite installation with `vc4-kms-v3d`, adding the following to `/boot/firmware/config.txt` returned 32 MB of firmware-reserved RAM to Linux while retaining hardware rendering at 1920 × 1200:
+
+```ini
+[pi02]
+gpu_mem=32
+[all]
+```
+
+Back up the file before changing it, then reboot. The `[pi02]` section keeps the setting specific to the Zero 2 W when moving the card between boards. This is a calendar display configuration; other firmware features may need a larger allocation. See Raspberry Pi's [memory configuration](https://www.raspberrypi.com/documentation/computers/legacy_config_txt.html#memory-options) and [model filters](https://www.raspberrypi.com/documentation/computers/config_txt.html#model-filters).
+
 ## Orange Pi Vulkan display
 
 The 4 GB Orange Pi Zero 3W was tested at 1920 × 1200 using Chromium's ANGLE Vulkan renderer and the vendor PowerVR driver on Armbian 26.8.1, kernel `6.6.98-vendor-sun60iw2`. The on-screen FPS counter showed 22–28 FPS during physical scrolling, with clear text. This is a separate display option; the small Raspberry Pi builds keep WPE or SDL.
