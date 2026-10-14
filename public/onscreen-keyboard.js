@@ -96,7 +96,12 @@ if (kioskKeyboardEnabled) {
     for (let index = 0; index < rows.length; index++) {
       const row = document.createElement('div');
       row.className = 'enve-keyboard-row';
-      if (index === rows.length - 1) row.append(key(shifted ? '⇧' : '⇧', 'shift', 'special'));
+      if (index === rows.length - 1) {
+        const shift = key('⇧', 'shift', 'special');
+        shift.setAttribute('aria-label', 'Shift');
+        shift.setAttribute('aria-pressed', String(shifted));
+        row.append(shift);
+      }
       for (const character of rows[index]) {
         const value = shifted ? character.toUpperCase() : character;
         row.append(key(value, value));
@@ -152,6 +157,7 @@ if (kioskKeyboardEnabled) {
 
   document.addEventListener('focusin', (event) => {
     if (!editable(event.target)) return;
+    if (event.target === target && !keyboard.hidden) return;
     target = event.target;
     (target.closest('dialog') || document.body).append(keyboard);
     keyboard.hidden = false;
@@ -160,7 +166,8 @@ if (kioskKeyboardEnabled) {
     setTimeout(() => target?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 50);
   });
   document.addEventListener('pointerdown', (event) => {
-    if (keyboard.hidden || keyboard.contains(event.target) || event.target === target) return;
+    if (keyboard.hidden || event.composedPath().includes(keyboard) || event.target === target)
+      return;
     if (!editable(event.target)) {
       keyboard.hidden = true;
       document.body.classList.remove('enve-keyboard-open');
