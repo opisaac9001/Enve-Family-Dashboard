@@ -22,7 +22,7 @@ A self-hosted, touch-friendly family calendar with day, week, and month views; r
 
 ## Screenshots
 
-These screenshots use an invented household and a disposable database. No connected accounts or private calendar data appear in them.
+These screenshots show the current interface, captured October 14, 2026, using an invented household and a disposable database. No connected accounts or private calendar data appear in them.
 
 | Calendar | Night mode | Dimmed clock |
 | --- | --- | --- |
@@ -36,7 +36,7 @@ These screenshots use an invented household and a disposable database. No connec
 | --- | --- | --- |
 | ![Shared grocery list](docs/screenshots/lists.jpg) | ![Month calendar in dark mode](docs/screenshots/night-month.jpg) | ![Accent color and dimming controls](docs/screenshots/display-settings.jpg) |
 
-The dashboard also supports [other accent colors](docs/screenshots/settings-accent.jpg) and adapts to an [iPhone-sized browser](docs/screenshots/phone-calendar.jpg). The [native iPhone app](docs/screenshots/iphone-app.jpg) uses the same household data and accent.
+The [day view](docs/screenshots/calendar-day.jpg) brings the schedule, tasks, and meals together. The dashboard also supports [other accent colors](docs/screenshots/settings-accent.jpg) and adapts to an [iPhone-sized browser](docs/screenshots/phone-calendar.jpg). The [native iPhone app](docs/screenshots/iphone-app.jpg) uses the same household data and accent.
 
 ## License
 
